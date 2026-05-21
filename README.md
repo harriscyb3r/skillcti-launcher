@@ -481,33 +481,6 @@ Each slash-command folder contains a single `SKILL.md` file with frontmatter (`n
 - Australian-flavoured skills assume an ANZ critical-infrastructure context (SOCI Act, ACSC, OAIC NDB, APRA CPS 234, ASD Essential Eight). Global variants swap in the appropriate regional frameworks.
 - The **SkillCTI launcher** and the **slash commands** use the same skill prompts and produce the same outputs. The launcher adds a UI, persistent history with filter/sort, PDF export, Cmd+K command palette, theme toggle, present mode, dashboard widgets, and the CTI Analyst chat; the slash commands integrate with Claude Code's filesystem and IDE awareness.
 
-## Contributing
-
-Issues and pull requests welcome.
-
-**To add a new slash-command skill:** create a folder following the naming convention (`cti-*` or `dfir-*` or a thematic name) with a single `SKILL.md` containing frontmatter (`name`, `description`, `allowed-tools`, `argument-hint`) and a clear prompt body.
-
-**To surface a skill in the SkillCTI launcher:** add a card definition object to the appropriate array in [`skill-cti/skills.js`](skill-cti/skills.js) — one of `DAILY_BRIEFS`, `MONTHLY_AU`, `MONTHLY_GLOBAL`, `SECTOR_REPORTS`, `ONDEMAND_SKILLS`, `DFIR_SKILLS`, or `STRATEGY_SKILLS`. Counts in the sidebar tab labels auto-derive from these array lengths; no HTML edits needed beyond adding the object. The shape of a card object:
-
-```js
-{
-  id: 'unique-skill-id',
-  name: 'Human-readable name',
-  tagline: 'One-line description for the card',
-  badge: 'BADGE TEXT',
-  badgeColor: '#hexcolour',
-  category: 'reports' | 'ondemand' | 'dfir' | 'strategy',
-  description: 'Longer description for the card body and analyst chat.',
-  inputs: [
-    {id: 'fieldId', label: 'Field label', type: 'text|textarea|select', required: bool, placeholder: '...', options: [...]}
-  ],
-  buildMsg: v => `prompt text using ${v.fieldId}`,
-  needsSearch: true | false,    // enables web_search tool
-  maxTokens: 8000,              // response cap
-  systemPrompt: `Full system prompt for this skill — what to research, what to output.`
-}
-```
-
 ## License
 
 See `LICENSE` in the repository root.
