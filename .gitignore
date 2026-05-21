@@ -1,0 +1,76 @@
+# ──────────────────────────────────────────────────────────────────────────
+# Work-in-progress skills (excluded from publish until ready)
+# ──────────────────────────────────────────────────────────────────────────
+cti-ioc-enrich/
+
+# ──────────────────────────────────────────────────────────────────────────
+# Claude Code local settings
+# ──────────────────────────────────────────────────────────────────────────
+.claude/
+.claude.json
+*.local
+
+# ──────────────────────────────────────────────────────────────────────────
+# Generated reports — never publish saved analyst output
+# Keep the directory (.gitkeep) but ignore all generated content
+# ──────────────────────────────────────────────────────────────────────────
+skill-cti/reports/*
+!skill-cti/reports/.gitkeep
+
+# Also ignore any stray report files that escape the reports/ directory
+*.meta.json
+
+# ──────────────────────────────────────────────────────────────────────────
+# Python (skill-cti proxy + log-analysis proxy)
+# ──────────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+venv/
+.venv/
+env/
+
+# ──────────────────────────────────────────────────────────────────────────
+# Environment / secrets — defensive
+# ──────────────────────────────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+secrets/
+credentials.json
+
+# ──────────────────────────────────────────────────────────────────────────
+# IDE / editor
+# ──────────────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.sublime-project
+*.sublime-workspace
+
+# ──────────────────────────────────────────────────────────────────────────
+# OS
+# ──────────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+ehthumbs.db
+$RECYCLE.BIN/
+
+# ──────────────────────────────────────────────────────────────────────────
+# Logs
+# ──────────────────────────────────────────────────────────────────────────
+*.log
+logs/

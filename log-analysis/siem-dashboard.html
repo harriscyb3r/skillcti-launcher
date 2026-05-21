@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sherlog Holmes — Log Analyser</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
+  :root {
+    --bg: #0a0c10; --bg2: #0f1219; --bg3: #131720; --bg4: #1a1f2e;
+    --b1: #1e2433; --b2: #2a3347;
+    --acc: #a855f7; --acc2: #7c3aed; --accc: #c084fc;
+    --t1: #e2e8f0; --t2: #8899aa; --t3: #4a5568;
+    --crit: #ef4444; --high: #f97316; --med: #eab308; --low: #22c55e;
+    --crit-bg: rgba(239,68,68,.08); --high-bg: rgba(249,115,22,.08);
+    --med-bg: rgba(234,179,8,.08); --low-bg: rgba(34,197,94,.08);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--t1);min-height:100vh;font-size:13px;overflow:hidden}
+
+  /* TOPBAR */
+  .tb{background:var(--bg2);border-bottom:1px solid var(--b1);padding:0 16px;height:44px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:100}
+  .logo{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;color:var(--accc)}
+  .logo span{color:var(--acc)}
+  .tr{margin-left:auto;display:flex;align-items:center;gap:8px}
+  .sdot{width:6px;height:6px;border-radius:50%;background:var(--low);box-shadow:0 0 6px var(--low);animation:pulse 2s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+  .stxt{font-size:11px;color:var(--t2);font-family:'JetBrains Mono',monospace}
+
+  /* SEARCH */
+  .sb{background:var(--bg2);border-bottom:1px solid var(--b1);padding:9px 16px;display:flex;gap:7px;align-items:center}
+  .sw{flex:1;position:relative}
+  .sp{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--accc);position:absolute;left:10px;top:50%;transform:translateY(-50%);pointer-events:none}
+  .si{width:100%;background:var(--bg);border:1px solid var(--b2);border-radius:5px;padding:7px 10px 7px 46px;color:var(--t1);font-family:'JetBrains Mono',monospace;font-size:12px;outline:none;transition:border-color .2s}
+  .si::placeholder{color:var(--t3)}
+  .si:focus{border-color:var(--acc)}
+  .btn{background:var(--acc);border:none;border-radius:5px;color:#fff;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:background .2s;white-space:nowrap}
+  .btn:hover{background:var(--acc2)}
+  .btn:disabled{background:var(--b2);cursor:not-allowed;opacity:.6}
+  .btng{background:none;border:1px solid var(--b2);color:var(--t2)}
+  .btng:hover{border-color:var(--acc);color:var(--acc);background:rgba(168,85,247,.06)}
+  .btnai{background:linear-gradient(135deg,#2e1065,#1e1b4b);border:1px solid var(--acc2);color:var(--accc);display:flex;align-items:center;gap:5px}
+  .btnai:hover{border-color:var(--acc);color:#e9d5ff}
+
+  /* FILTER ROW */
+  .fr{background:var(--bg2);border-bottom:1px solid var(--b1);padding:5px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .flbl{font-size:10px;color:var(--t3);font-family:'JetBrains Mono',monospace;letter-spacing:.5px}
+  .fb{background:none;border:1px solid var(--b1);border-radius:3px;color:var(--t3);padding:2px 8px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;cursor:pointer;font-family:'JetBrains Mono',monospace;transition:all .15s}
+  .fb:hover{color:var(--t2)}
+  .fba{border-color:var(--acc);color:var(--acc);background:rgba(168,85,247,.08)}
+  .fbc{border-color:var(--crit);color:var(--crit);background:var(--crit-bg)}
+  .fbh{border-color:var(--high);color:var(--high);background:var(--high-bg)}
+  .fbm{border-color:var(--med);color:var(--med);background:var(--med-bg)}
+  .fbl{border-color:var(--low);color:var(--low);background:var(--low-bg)}
+  .srcwrap{display:flex;gap:4px;flex-wrap:wrap}
+  .srcb{background:none;border:1px solid var(--b1);border-radius:3px;color:var(--t3);padding:2px 7px;font-size:10px;cursor:pointer;font-family:'JetBrains Mono',monospace;transition:all .15s;display:flex;align-items:center;gap:3px}
+  .srcb.on{background:rgba(168,85,247,.1);border-color:var(--acc);color:var(--accc)}
+
+  /* LAYOUT */
+  .layout{display:grid;grid-template-columns:210px 1fr 355px;grid-template-rows:auto 1fr;height:calc(100vh - 126px);overflow:hidden;min-height:0}
+
+  /* FILES PANEL */
+  .fp{border-right:1px solid var(--b1);background:var(--bg3);display:flex;flex-direction:column;overflow:hidden}
+  .ph{padding:9px 12px;border-bottom:1px solid var(--b1);font-size:10px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:var(--t3);font-family:'JetBrains Mono',monospace;display:flex;align-items:center;justify-content:space-between}
+  .phadd{color:var(--acc);cursor:pointer;font-size:15px;line-height:1}
+  .fl{flex:1;overflow-y:auto;padding:7px}
+  .fl::-webkit-scrollbar{width:3px}
+  .fl::-webkit-scrollbar-thumb{background:var(--b2)}
+  .fi{border:1px solid var(--b1);border-radius:5px;padding:7px 9px;margin-bottom:5px;cursor:pointer;transition:all .15s;position:relative}
+  .fi:hover{border-color:var(--b2);background:var(--bg4)}
+  .fi.on{border-color:var(--acc);background:rgba(168,85,247,.06)}
+  .finn{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--t1);margin-bottom:2px;word-break:break-all}
+  .fimeta{font-size:10px;color:var(--t3)}
+  .fibadges{display:flex;gap:3px;margin-top:3px;flex-wrap:wrap}
+  .fib{font-size:9px;padding:1px 5px;border-radius:2px;font-family:'JetBrains Mono',monospace;font-weight:700}
+  .fib-c{background:var(--crit-bg);color:var(--crit)}
+  .fib-h{background:var(--high-bg);color:var(--high)}
+  .fib-t{background:rgba(168,85,247,.1);color:var(--accc)}
+  .fidel{position:absolute;top:5px;right:6px;background:none;border:none;color:var(--t3);cursor:pointer;font-size:11px;opacity:0;transition:opacity .15s}
+  .fi:hover .fidel{opacity:1}
+  .fidel:hover{color:var(--crit)}
+  .fadd{margin:7px;border:1px dashed var(--b2);border-radius:5px;padding:9px;text-align:center;cursor:pointer;transition:all .2s;font-size:11px;color:var(--t3);font-family:'JetBrains Mono',monospace}
+  .fadd:hover{border-color:var(--acc);color:var(--acc);background:rgba(168,85,247,.04)}
+  .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:3px;flex-shrink:0}
+
+  /* CORRELATIONS */
+  .cp{border-top:1px solid var(--b1);padding:9px 11px}
+  .ctitle{font-size:10px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:var(--t3);font-family:'JetBrains Mono',monospace;margin-bottom:6px}
+  .ci{display:flex;gap:6px;align-items:flex-start;padding:4px 0;border-bottom:1px solid var(--b1)}
+  .ci:last-child{border-bottom:none}
+  .ci-ip{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--accc);white-space:nowrap}
+  .ci-files{font-size:10px;color:var(--t3);line-height:1.4}
+  .ci-cnt{font-size:10px;color:var(--med);font-family:'JetBrains Mono',monospace;margin-left:auto}
+
+  /* STATS */
+  .sr{grid-column:1/-1;display:grid;grid-template-columns:repeat(6,1fr);border-bottom:1px solid var(--b1)}
+  .sc{padding:11px 14px;border-right:1px solid var(--b1)}
+  .sc:last-child{border-right:none}
+  .slbl{font-size:9px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:var(--t3);font-family:'JetBrains Mono',monospace}
+  .sval{font-size:19px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--t1);line-height:1.1;margin-top:2px}
+  .sval.c{color:var(--crit)}.sval.h{color:var(--high)}.sval.a{color:var(--acc)}
+  .ssub{font-size:9px;color:var(--t3);font-family:'JetBrains Mono',monospace;margin-top:1px}
+
+  /* TABLE */
+  .ep{display:flex;flex-direction:column;overflow:hidden;border-right:1px solid var(--b1)}
+  .tw{flex:1;overflow-y:auto}
+  .tw::-webkit-scrollbar{width:4px}
+  .tw::-webkit-scrollbar-thumb{background:var(--b2);border-radius:2px}
+  table{width:100%;border-collapse:collapse;font-family:'JetBrains Mono',monospace;font-size:11px}
+  thead{position:sticky;top:0;background:var(--bg3);z-index:10}
+  th{padding:6px 9px;text-align:left;color:var(--t3);font-weight:500;font-size:9px;letter-spacing:.5px;text-transform:uppercase;border-bottom:1px solid var(--b1);cursor:pointer;white-space:nowrap;user-select:none}
+  th:hover{color:var(--t2)}
+  td{padding:5px 9px;border-bottom:1px solid rgba(30,36,51,.5);vertical-align:middle;color:var(--t2)}
+  tr:hover td{background:var(--bg4)}
+  tr.sel td{background:rgba(168,85,247,.07)}
+  tr.sc{} /* severity left border */
+  tr.s-critical td:first-child{border-left:2px solid var(--crit)}
+  tr.s-high td:first-child{border-left:2px solid var(--high)}
+  tr.s-medium td:first-child{border-left:2px solid var(--med)}
+  tr.s-low td:first-child{border-left:2px solid var(--low)}
+  .bdg{display:inline-flex;align-items:center;padding:1px 5px;border-radius:2px;font-size:9px;font-weight:700;letter-spacing:.4px;text-transform:uppercase}
+  .b-critical{background:var(--crit-bg);color:var(--crit);border:1px solid rgba(239,68,68,.2)}
+  .b-high{background:var(--high-bg);color:var(--high);border:1px solid rgba(249,115,22,.2)}
+  .b-medium{background:var(--med-bg);color:var(--med);border:1px solid rgba(234,179,8,.2)}
+  .b-low{background:var(--low-bg);color:var(--low);border:1px solid rgba(34,197,94,.2)}
+  .b-info{background:rgba(168,85,247,.08);color:var(--acc);border:1px solid rgba(168,85,247,.2)}
+  .td-t{color:var(--t3);white-space:nowrap;font-size:10px}
+  .td-ip{color:var(--accc);white-space:nowrap}
+  .td-msg{max-width:310px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--t1)}
+  .hl{background:rgba(234,179,8,.2);color:var(--med);border-radius:2px;padding:0 2px}
+  .cm{color:var(--acc);font-size:9px;margin-left:3px}
+  .tf{padding:6px 13px;border-top:1px solid var(--b1);display:flex;align-items:center;justify-content:space-between;background:var(--bg3);flex-shrink:0}
+  .pi{font-size:10px;color:var(--t3);font-family:'JetBrains Mono',monospace}
+  .pb{background:none;border:1px solid var(--b1);border-radius:3px;color:var(--t2);padding:2px 8px;font-size:10px;cursor:pointer;font-family:'JetBrains Mono',monospace;transition:all .15s}
+  .pb:hover:not(:disabled){border-color:var(--acc);color:var(--acc)}
+  .pb:disabled{opacity:.3;cursor:not-allowed}
+
+  /* EMPTY */
+  .em{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:9px;color:var(--t3);font-family:'JetBrains Mono',monospace;font-size:12px}
+  .ei{font-size:26px;opacity:.3}
+  .dz{border:2px dashed var(--b2);border-radius:6px;padding:18px 28px;text-align:center;cursor:pointer;transition:all .2s;font-size:11px;color:var(--t3);margin:12px 20px}
+  .dz:hover{border-color:var(--acc);color:var(--t2);background:rgba(168,85,247,.03)}
+
+  /* RIGHT */
+  .rp{display:flex;flex-direction:column;overflow:hidden;background:var(--bg3);min-height:0}
+  .ap{flex:1;overflow-y:auto;overflow-x:hidden;padding:11px;display:flex;flex-direction:column;gap:9px;min-height:0}
+  .ap::-webkit-scrollbar{width:8px}
+  .ap::-webkit-scrollbar-track{background:var(--bg2)}
+  .ap::-webkit-scrollbar-thumb{background:var(--b2);border-radius:4px}
+  .ap::-webkit-scrollbar-thumb:hover{background:var(--acc2)}
+  .as{background:var(--bg2);border:1px solid var(--b1);border-radius:5px;overflow:hidden}
+  .ash{padding:7px 10px;font-size:10px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:var(--t3);font-family:'JetBrains Mono',monospace;border-bottom:1px solid var(--b1)}
+  .asb{padding:10px;font-size:11px;color:var(--t2);line-height:1.6}
+  .tr-row{display:flex;gap:6px;align-items:flex-start;padding:5px 0;border-bottom:1px solid var(--b1)}
+  .tr-row:last-child{border-bottom:none}
+  .ttag{font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;padding:2px 5px;border-radius:2px;white-space:nowrap;flex-shrink:0}
+  .tc{background:rgba(239,68,68,.1);color:var(--crit);border:1px solid rgba(239,68,68,.2)}
+  .th{background:rgba(249,115,22,.1);color:var(--high);border:1px solid rgba(249,115,22,.2)}
+  .tm{background:rgba(234,179,8,.1);color:var(--med);border:1px solid rgba(234,179,8,.2)}
+  .tdsc{font-size:11px;color:var(--t2);line-height:1.4}
+  .tmi{font-size:10px;color:var(--acc);font-family:'JetBrains Mono',monospace;margin-top:2px}
+  .ir{padding:5px 0;border-bottom:1px solid var(--b1);display:flex;gap:6px;align-items:flex-start}
+  .ir:last-child{border-bottom:none}
+  .it{font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;padding:2px 5px;border-radius:2px;background:rgba(239,68,68,.1);color:var(--crit);border:1px solid rgba(239,68,68,.2);white-space:nowrap;flex-shrink:0}
+  .iv{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--crit)}
+  .ic{font-size:10px;color:var(--t3);margin-top:1px}
+  .rr{display:flex;gap:6px;padding:4px 0;border-bottom:1px solid var(--b1);font-size:11px;color:var(--t2);line-height:1.4}
+  .rr:last-child{border-bottom:none}
+  .rn{color:var(--acc);font-family:'JetBrains Mono',monospace;font-size:10px;flex-shrink:0;margin-top:1px}
+
+  /* PACKAGE PANEL */
+  .pkgrp{border:1px solid var(--b1);border-radius:4px;margin-bottom:5px;background:var(--bg3);overflow:hidden}
+  .pkgrp-multi{border-color:rgba(249,115,22,.4)}
+  .pkgrp-cross{border-color:rgba(168,85,247,.45)}
+  .pkgrp-multi.pkgrp-cross{border-color:var(--crit)}
+  .pkgh{display:flex;align-items:center;gap:6px;padding:5px 8px;cursor:pointer;background:var(--bg2);border-bottom:1px solid var(--b1)}
+  .pkgh:hover{background:var(--bg4)}
+  .pkgn{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--t1);font-weight:600;flex:1;word-break:break-all}
+  .pkgwarn{font-size:9px;color:var(--high);background:rgba(249,115,22,.12);padding:1px 5px;border-radius:2px;font-family:'JetBrains Mono',monospace;font-weight:700}
+  .pkgxf{color:var(--accc);font-size:10px}
+  .pkgc{font-size:9px;color:var(--t3);font-family:'JetBrains Mono',monospace;background:var(--bg);padding:1px 5px;border-radius:8px;border:1px solid var(--b2)}
+  .pkglist{padding:3px 6px}
+  .pkv{display:flex;align-items:center;gap:6px;padding:3px 4px;cursor:pointer;border-radius:3px;transition:background .12s}
+  .pkv:hover{background:rgba(168,85,247,.08)}
+  .pkvv{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--accc);flex:1}
+  .pkvc{font-size:9px;color:var(--t3);font-family:'JetBrains Mono',monospace}
+  .pkvf{display:inline-flex;align-items:center}
+  .pkgxbtn{background:none;border:1px solid var(--b2);border-radius:3px;color:var(--t2);padding:2px 7px;font-size:10px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-weight:600;letter-spacing:.4px;transition:all .15s;text-transform:none}
+  .pkgxbtn:hover{border-color:var(--acc);color:var(--acc);background:rgba(168,85,247,.08)}
+  .pkgxbtn:disabled{opacity:.3;cursor:not-allowed}
+  .pkgxbtn.ok{border-color:var(--low);color:var(--low);background:var(--low-bg)}
+  #fi2{display:none}
+</style>
+</head>
+<body>
+
+<div class="tb">
+  <div class="logo">⟨ Sherlog<span> Holmes</span> ⟩</div>
+  <div class="tr">
+    <div class="sdot"></div>
+    <span class="stxt" id="stxt">READY</span>
+  </div>
+</div>
+
+<div class="sb">
+  <div class="sw">
+    <span class="sp">SPL&gt;</span>
+    <input type="text" class="si" id="si" placeholder="search keyword, IP, package@version, filename, event type..." onkeydown="if(event.key==='Enter')doSearch()">
+  </div>
+  <button class="btn" onclick="doSearch()">Search</button>
+  <button class="btn btng" onclick="clearSearch()">Clear</button>
+  <label class="btn btng" for="fi2" style="cursor:pointer">+ Add File</label>
+  <input type="file" id="fi2" multiple onchange="loadFiles(event)">
+</div>
+
+<div class="fr">
+  <span class="flbl">SEV:</span>
+  <button class="fb fba" id="fAll" onclick="setSev('all',this)">All</button>
+  <button class="fb" id="fCrit" onclick="setSev('critical',this)">Critical</button>
+  <button class="fb" id="fHigh" onclick="setSev('high',this)">High</button>
+  <button class="fb" id="fMed" onclick="setSev('medium',this)">Medium</button>
+  <button class="fb" id="fLow" onclick="setSev('low',this)">Low</button>
+  <span class="flbl" style="margin-left:10px">SOURCE:</span>
+  <div class="srcwrap" id="srcwrap"><span style="font-size:10px;color:var(--t3);font-family:'JetBrains Mono',monospace">No files</span></div>
+  <span class="flbl" id="corrBadge" style="display:none;margin-left:auto;color:var(--acc)">⚡ CORRELATIONS ACTIVE</span>
+</div>
+
+<div class="layout">
+  <div class="sr">
+    <div class="sc"><div class="slbl">Total Events</div><div class="sval" id="sT">—</div><div class="ssub" id="sSub">—</div></div>
+    <div class="sc"><div class="slbl">Critical</div><div class="sval c" id="sC">—</div><div class="ssub">severity</div></div>
+    <div class="sc"><div class="slbl">High</div><div class="sval h" id="sH">—</div><div class="ssub">severity</div></div>
+    <div class="sc"><div class="slbl">Packages</div><div class="sval a" id="sPk">—</div><div class="ssub" id="sPkSub">pkg@version refs</div></div>
+    <div class="sc"><div class="slbl">Files Loaded</div><div class="sval a" id="sF">0</div><div class="ssub" id="sFS">—</div></div>
+    <div class="sc"><div class="slbl">Correlations</div><div class="sval a" id="sCo">—</div><div class="ssub">cross-file pkgs/IPs</div></div>
+  </div>
+
+  <!-- FILES PANEL -->
+  <div class="fp">
+    <div class="ph">Files <span class="phadd" onclick="document.getElementById('fi2').click()" title="Add file">+</span></div>
+    <div class="fl" id="fileList"><div class="em" style="height:80px;font-size:11px">No files loaded</div></div>
+    <div class="fadd" onclick="document.getElementById('fi2').click()">+ Add log file</div>
+    <div class="cp" id="corrPanel" style="display:none">
+      <div class="ctitle">⚡ Cross-File Correlations</div>
+      <div id="corrList"></div>
+    </div>
+  </div>
+
+  <!-- EVENTS TABLE -->
+  <div class="ep">
+    <div class="ph">Events <span id="evtBadge" style="background:var(--bg);border:1px solid var(--b2);border-radius:10px;padding:1px 7px;font-size:10px;color:var(--t2)">0</span></div>
+    <div class="tw" id="tw">
+      <div class="em" id="emptyState">
+        <div class="ei">⎔</div>
+        <div>Load log files to begin analysis</div>
+        <div style="font-size:10px;color:var(--t3)">Multiple files supported — events are merged and correlated</div>
+        <div class="dz" id="dz" onclick="document.getElementById('fi2').click()">
+          Drop log files here or click to browse<br>
+          <span style="font-size:10px;color:var(--t3)">npm-debug.log · nvm.log · claude session jsonl · any text log</span>
+        </div>
+      </div>
+      <table id="evtTable" style="display:none">
+        <thead><tr>
+          <th onclick="doSort('time')" style="width:125px">Time ↕</th>
+          <th onclick="doSort('severity')" style="width:72px">Sev ↕</th>
+          <th onclick="doSort('fileIdx')" style="width:78px">File ↕</th>
+          <th onclick="doSort('ip')" style="width:92px">IP ↕</th>
+          <th onclick="doSort('type')" style="width:105px">Type ↕</th>
+          <th>Message</th>
+        </tr></thead>
+        <tbody id="evtBody"></tbody>
+      </table>
+    </div>
+    <div class="tf">
+      <div class="pi" id="pi">—</div>
+      <div style="display:flex;gap:4px">
+        <button class="pb" id="pprev" onclick="goPage(-1)" disabled>← Prev</button>
+        <button class="pb" id="pnext" onclick="goPage(1)" disabled>Next →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PACKAGE VERSIONS PANEL -->
+  <div class="rp">
+    <div class="ph" style="gap:6px">
+      <span>⬢ Package Versions</span>
+      <span id="pkgBadge" style="background:var(--bg);border:1px solid var(--b2);border-radius:10px;padding:1px 7px;font-size:10px;color:var(--t2);margin-left:auto">0</span>
+      <button class="pkgxbtn" id="pkgExpCsv" onclick="exportPkgs('csv')" title="Export as CSV">CSV</button>
+      <button class="pkgxbtn" id="pkgExpJson" onclick="exportPkgs('json')" title="Export as JSON">JSON</button>
+      <button class="pkgxbtn" id="pkgExpCopy" onclick="exportPkgs('copy')" title="Copy pkg@version list to clipboard">⧉</button>
+    </div>
+    <div class="ap" id="ap">
+      <div class="as">
+        <div class="ash">⬡ Supply-Chain View</div>
+        <div class="asb" style="color:var(--t3);font-size:11px">
+          Every <code style="color:var(--accc)">package@version</code> reference found across loaded logs is listed here. Click any entry to filter the event table to lines that mention it.<br><br>
+          Load npm-debug, nvm, or Claude session logs to begin.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const COLOURS = ['#c084fc','#67e8f9','#86efac','#fde047','#fb923c','#f472b6','#a78bfa','#34d399'];
+let files = [], all = [], filtered = [], page = 0;
+const PER = 100;
+let sortF = 'time', sortD = -1, sevF = 'all', srcF = 'all', q = '';
+let corrs = {};
+// pkgRefs: { "pkg@version": { pkg, version, count, files: Set<idx>, eventIds: Set<id> } }
+let pkgRefs = {};
+let nodeRefs = {}; // node version -> {count, files}
+
+// package@version e.g. "lodash@4.17.21" or "@types/node@18.0.0" — requires semver-ish X.Y.Z
+const PKG_RX  = /(?<![@\w.-])((?:@[a-z0-9][\w.-]*\/)?[a-z0-9][\w.-]*)@(\d+\.\d+\.\d+(?:-[\w.+-]+)?)\b/gi;
+// tarball URL e.g. https://registry.npmjs.org/lodash/-/lodash-4.17.21.tgz
+const TGZ_RX  = /\/((?:@[a-z0-9][\w.-]*\/)?[a-z0-9][\w.-]*)\/-\/[\w.-]+-(\d+\.\d+\.\d+(?:-[\w.+-]+)?)\.tgz/gi;
+// node version e.g. "node v18.16.0" or "v18.16.0" in nvm logs
+const NODE_RX = /\b(?:node[@\s\/-]+v?|v)(\d+\.\d+\.\d+)\b/gi;
+
+// DRAG DROP
+document.body.addEventListener('dragover', e => { e.preventDefault(); });
+document.body.addEventListener('drop', e => { e.preventDefault(); const fs = [...e.dataTransfer.files]; if(fs.length) processFiles(fs); });
+
+function loadFiles(ev) { processFiles([...ev.target.files]); ev.target.value=''; }
+
+function processFiles(flist) {
+  let pending = flist.length;
+  flist.forEach(file => {
+    const r = new FileReader();
+    r.onload = e => {
+      const colour = COLOURS[files.length % COLOURS.length];
+      const evts = parseLog(e.target.result, files.length, file.name);
+      files.push({ name: file.name, colour, events: evts, size: file.size });
+      if (--pending === 0) rebuild();
+    };
+    r.readAsText(file);
+  });
+}
+
+function parseLog(content, idx, name) {
+  const lower = name.toLowerCase();
+  const isJsonl = /\.jsonl$|\.ndjson$|claude.*session|session.*\.json/i.test(lower);
+  const lines = content.split(/\r?\n/).filter(l => l.trim().length > 1);
+  return lines.map((line, i) => {
+    const id = `${idx}-${i}`;
+    let parsed = null;
+    if (isJsonl || (line.startsWith('{') && line.endsWith('}'))) {
+      try { parsed = JSON.parse(line); } catch(_) {}
+    }
+    const ev = {
+      id, fileIdx: idx, fileName: name,
+      time: getTime(line, parsed),
+      severity: getSev(line, parsed),
+      ip: getIP(line),
+      type: getType(line, parsed),
+      message: parsed ? flattenJson(parsed, line) : line.trim()
+    };
+    extractPkgRefs(line, ev, idx, name);
+    return ev;
+  });
+}
+
+function flattenJson(p, raw) {
+  // Compact representation for claude session JSONL — keep raw as fallback
+  const parts = [];
+  if (p.type) parts.push(`[${p.type}]`);
+  if (p.role) parts.push(`role=${p.role}`);
+  if (p.timestamp) parts.push(p.timestamp);
+  if (p.model) parts.push(`model=${p.model}`);
+  if (typeof p.message === 'string') parts.push(p.message);
+  else if (p.message?.content) {
+    const c = p.message.content;
+    if (typeof c === 'string') parts.push(c);
+    else if (Array.isArray(c)) parts.push(c.map(x => x.text || x.input?.command || x.name || JSON.stringify(x)).join(' | '));
+  }
+  if (p.tool_use_id) parts.push(`tool=${p.tool_use_id}`);
+  if (p.cwd) parts.push(`cwd=${p.cwd}`);
+  const out = parts.join(' ').slice(0, 600);
+  return out || raw.trim().slice(0, 600);
+}
+
+function extractPkgRefs(line, ev, idx, name) {
+  const seen = new Set();
+  const add = (pkg, version) => {
+    const key = `${pkg}@${version}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    if (!pkgRefs[key]) pkgRefs[key] = { pkg, version, count: 0, files: new Set(), eventIds: new Set() };
+    pkgRefs[key].count++;
+    pkgRefs[key].files.add(idx);
+    pkgRefs[key].eventIds.add(ev.id);
+  };
+  let m;
+  PKG_RX.lastIndex = 0;
+  while ((m = PKG_RX.exec(line)) !== null) {
+    // Skip obvious email-like matches by checking next char isn't a TLD letter sequence following dot in version (already constrained by regex)
+    add(m[1], m[2]);
+  }
+  TGZ_RX.lastIndex = 0;
+  while ((m = TGZ_RX.exec(line)) !== null) add(m[1], m[2]);
+  NODE_RX.lastIndex = 0;
+  while ((m = NODE_RX.exec(line)) !== null) {
+    const v = m[1];
+    if (!nodeRefs[v]) nodeRefs[v] = { count: 0, files: new Set() };
+    nodeRefs[v].count++;
+    nodeRefs[v].files.add(idx);
+  }
+}
+
+function getTime(l, parsed) {
+  if (parsed) {
+    const t = parsed.timestamp || parsed.time || parsed.ts || parsed['@timestamp'];
+    if (typeof t === 'string') return t.replace('T',' ').slice(0, 23);
+  }
+  const m = l.match(/(\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?)/);
+  if (m) return m[1].replace('T',' ');
+  const m2 = l.match(/(\w{3}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})/);
+  return m2 ? m2[1] : '—';
+}
+function getIP(l) {
+  const m = l.match(/(?:from|src|source|client|address)\s+([\d:a-f.]+)/i)
+    || l.match(/\b(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\b/)
+    || l.match(/\b((?:[0-9a-f]{1,4}:){2,7}[0-9a-f]{1,4}|::1)\b/i);
+  return m ? m[1] : '—';
+}
+function getType(l, parsed) {
+  if (parsed?.type) return String(parsed.type).slice(0, 24);
+  const lo = l.toLowerCase();
+  // npm-debug.log format: "<n> <level> <category> ..."
+  const npm = l.match(/^\d+\s+(verbose|info|silly|warn|error|http|notice|timing|finish)\s+(\S+)/i);
+  if (npm) return `npm:${npm[2].slice(0,18)}`;
+  if (/postinstall|preinstall|install script/.test(lo)) return 'Install Script';
+  if (/lifecycle/.test(lo)) return 'Lifecycle';
+  if (/integrity|sha512|sha1|tarball/.test(lo)) return 'Integrity';
+  if (/audit|vulnerab/.test(lo)) return 'Audit';
+  if (/registry\.npmjs|registry\.yarnpkg/.test(lo)) return 'Registry Fetch';
+  if (/nvm /.test(lo) || /\bnvm\b.*(use|install|alias)/.test(lo)) return 'nvm';
+  if (/tool_use|tool_result/.test(lo)) return 'Tool Use';
+  if (/assistant|user/.test(lo) && parsed) return 'Chat Turn';
+  if (/authentication fail|auth fail|failed password/.test(lo)) return 'Auth Failure';
+  if (/accepted password|accepted publickey/.test(lo)) return 'Auth Success';
+  if (/connection from/.test(lo)) return 'Connection';
+  if (/error:|"error"/.test(lo)) return 'Error';
+  if (/warn/.test(lo)) return 'Warning';
+  if (/debug/.test(lo)) return 'Debug';
+  return 'Event';
+}
+function getSev(l, parsed) {
+  const lo = l.toLowerCase();
+  // npm-debug.log level field is authoritative
+  const npm = l.match(/^\d+\s+(verbose|info|silly|warn|error|http|notice|timing|finish)\b/i);
+  if (npm) {
+    const lvl = npm[1].toLowerCase();
+    if (lvl === 'error') return 'critical';
+    if (lvl === 'warn') return 'high';
+    if (lvl === 'notice' || lvl === 'http') return 'medium';
+    return 'low';
+  }
+  // Supply-chain red flags
+  if (/postinstall|preinstall/.test(lo) && /(curl|wget|powershell|bash -c|eval|base64|exec\(|child_process|spawnSync)/i.test(l)) return 'critical';
+  if (/integrity check.*fail|sha(512|1).*mismatch|EINTEGRITY/i.test(l)) return 'critical';
+  if (/error:|critical|alert|emerg|fatal|invalid protocol|refused connect|attack|malicious/.test(lo)) return 'critical';
+  if (/warn(ing)?:|failed|failure|denied|reject|invalid|unauthorized|forbidden|deprecated|vulnerab/.test(lo)) return 'high';
+  if (/notice:|connection from|accepted|closed by|install|publish/.test(lo)) return 'medium';
+  if (/debug[123]?:|info:|server listening|bind to|starting/.test(lo)) return 'low';
+  return 'info';
+}
+
+function rebuild() {
+  // Re-derive everything from current files (pkgRefs/nodeRefs already populated during parse;
+  // but file removal needs a reset, so rebuild from scratch from cached events)
+  pkgRefs = {}; nodeRefs = {};
+  all = files.flatMap(f => f.events);
+  // Re-extract pkg/node refs from event messages (events keep original line text)
+  all.forEach(e => extractPkgRefs(e.message, e, e.fileIdx, e.fileName));
+  all.sort((a,b) => a.time < b.time ? -1 : a.time > b.time ? 1 : 0);
+
+  // Cross-file correlations: IPs + packages seen in 2+ files
+  corrs = {};
+  all.forEach(e => {
+    if (e.ip === '—') return;
+    if (!corrs[e.ip]) corrs[e.ip] = new Set();
+    corrs[e.ip].add(e.fileIdx);
+  });
+  Object.keys(corrs).forEach(ip => { if (corrs[ip].size < 2) delete corrs[ip]; });
+
+  updateStats(); updateFileList(); updateSrcFilters(); updateCorrPanel(); updatePackages(); applyFilters();
+  setS(`READY — ${all.length.toLocaleString()} events · ${Object.keys(pkgRefs).length} pkg refs · ${files.length} file(s)`);
+}
+
+function updateStats() {
+  document.getElementById('sT').textContent = all.length.toLocaleString();
+  document.getElementById('sC').textContent = all.filter(e=>e.severity==='critical').length;
+  document.getElementById('sH').textContent = all.filter(e=>e.severity==='high').length;
+  const pkgKeys = Object.keys(pkgRefs);
+  const uniquePkgs = new Set(pkgKeys.map(k => pkgRefs[k].pkg)).size;
+  document.getElementById('sPk').textContent = pkgKeys.length || '—';
+  document.getElementById('sPkSub').textContent = pkgKeys.length ? `${uniquePkgs} unique pkgs` : 'pkg@version refs';
+  document.getElementById('sF').textContent = files.length;
+  document.getElementById('sFS').textContent = files.map(f=>f.name.split('.').pop()).join(', ') || '—';
+  // cross-file: IPs OR packages seen across 2+ files
+  const pkgCrossFile = pkgKeys.filter(k => pkgRefs[k].files.size >= 2).length;
+  const cc = Object.keys(corrs).length + pkgCrossFile;
+  document.getElementById('sCo').textContent = cc || '—';
+  document.getElementById('corrBadge').style.display = cc > 0 ? 'inline' : 'none';
+  document.getElementById('sSub').textContent = filtered.length !== all.length ? `${filtered.length} filtered` : 'all events';
+}
+
+function updateFileList() {
+  const el = document.getElementById('fileList');
+  if (!files.length) { el.innerHTML='<div class="em" style="height:80px;font-size:11px">No files loaded</div>'; return; }
+  el.innerHTML = files.map((f,i) => {
+    const c = f.events.filter(e=>e.severity==='critical').length;
+    const h = f.events.filter(e=>e.severity==='high').length;
+    return `<div class="fi ${srcF==i?'on':''}" onclick="toggleSrc(${i})">
+      <button class="fidel" onclick="event.stopPropagation();removeFile(${i})">✕</button>
+      <div style="display:flex;align-items:center;gap:4px;margin-bottom:2px">
+        <span class="dot" style="background:${f.colour}"></span>
+        <div class="finn">${f.name}</div>
+      </div>
+      <div class="fimeta">${f.events.length.toLocaleString()} events · ${(f.size/1024).toFixed(1)} KB</div>
+      <div class="fibadges">
+        ${c>0?`<span class="fib fib-c">CRIT:${c}</span>`:''}
+        ${h>0?`<span class="fib fib-h">HIGH:${h}</span>`:''}
+        <span class="fib fib-t">${f.events.length}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function removeFile(idx) {
+  files.splice(idx, 1);
+  files.forEach((f,i) => f.events.forEach(e => e.fileIdx = i));
+  if (srcF == idx) srcF = 'all';
+  rebuild();
+}
+
+function updateSrcFilters() {
+  const el = document.getElementById('srcwrap');
+  if (!files.length) { el.innerHTML='<span style="font-size:10px;color:var(--t3);font-family:\'JetBrains Mono\',monospace">No files</span>'; return; }
+  el.innerHTML = files.map((f,i) =>
+    `<button class="srcb ${srcF==i?'on':''}" onclick="toggleSrc(${i})">
+      <span class="dot" style="background:${f.colour}"></span>${f.name.replace(/\.[^.]+$/,'').slice(0,12)}
+    </button>`
+  ).join('');
+}
+
+function toggleSrc(i) { srcF = (srcF==i)?'all':i; page=0; updateFileList(); updateSrcFilters(); applyFilters(); }
+
+function updateCorrPanel() {
+  const panel = document.getElementById('corrPanel');
+  const list = document.getElementById('corrList');
+  const entries = Object.entries(corrs);
+  if (!entries.length) { panel.style.display='none'; return; }
+  panel.style.display='block';
+  list.innerHTML = entries.slice(0,8).map(([ip, fset]) => {
+    const names = [...fset].map(i => files[i]?.name.replace(/\.[^.]+$/,'') || `File ${i}`);
+    const cnt = all.filter(e=>e.ip===ip).length;
+    return `<div class="ci"><div><div class="ci-ip">${ip}</div><div class="ci-files">${names.join(' + ')}</div></div><div class="ci-cnt">${cnt}×</div></div>`;
+  }).join('');
+}
+
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function updatePackages() {
+  const ap = document.getElementById('ap');
+  const badge = document.getElementById('pkgBadge');
+  const keys = Object.keys(pkgRefs);
+  badge.textContent = keys.length;
+
+  if (!keys.length && !Object.keys(nodeRefs).length) {
+    ap.innerHTML = `<div class="as">
+      <div class="ash">⬡ Supply-Chain View</div>
+      <div class="asb" style="color:var(--t3);font-size:11px">
+        No <code style="color:var(--accc)">package@version</code> references found yet. Load npm-debug, nvm, or Claude session logs to populate.
+      </div>
+    </div>`;
+    return;
+  }
+
+  // Group packages by name; each pkg lists its observed versions sorted by ref count
+  const byPkg = {};
+  keys.forEach(k => {
+    const r = pkgRefs[k];
+    if (!byPkg[r.pkg]) byPkg[r.pkg] = [];
+    byPkg[r.pkg].push(r);
+  });
+  const pkgNames = Object.keys(byPkg).sort((a,b) => {
+    // Multiple versions of same pkg → suspicious, surface first
+    const av = byPkg[a].length, bv = byPkg[b].length;
+    if (av !== bv) return bv - av;
+    const ac = byPkg[a].reduce((s,r)=>s+r.count,0);
+    const bc = byPkg[b].reduce((s,r)=>s+r.count,0);
+    return bc - ac;
+  });
+
+  const pkgListHtml = pkgNames.map(pkg => {
+    const versions = byPkg[pkg].sort((a,b) => b.count - a.count);
+    const multi = versions.length > 1;
+    const crossFile = versions.some(v => v.files.size >= 2);
+    const totalRefs = versions.reduce((s,v)=>s+v.count, 0);
+    const versionsHtml = versions.map(v => {
+      const fileNames = [...v.files].map(i => files[i]?.name.replace(/\.[^.]+$/,'').slice(0,16) || `f${i}`);
+      const dotHtml = [...v.files].map(i => `<span class="dot" style="background:${files[i]?.colour||'#888'};width:6px;height:6px;margin-right:1px"></span>`).join('');
+      return `<div class="pkv" onclick="filterByPkg('${esc(v.pkg)}@${esc(v.version)}')" title="Click to filter events">
+        <span class="pkvv">${esc(v.version)}</span>
+        <span class="pkvc">${v.count}×</span>
+        <span class="pkvf" title="${esc(fileNames.join(', '))}">${dotHtml}</span>
+      </div>`;
+    }).join('');
+    return `<div class="pkgrp ${multi?'pkgrp-multi':''} ${crossFile?'pkgrp-cross':''}">
+      <div class="pkgh" onclick="filterByPkg('${esc(pkg)}')">
+        <span class="pkgn">${esc(pkg)}</span>
+        ${multi?`<span class="pkgwarn" title="Multiple versions observed">⚠ ${versions.length}v</span>`:''}
+        ${crossFile?`<span class="pkgxf" title="Seen across multiple files">⚡</span>`:''}
+        <span class="pkgc">${totalRefs}</span>
+      </div>
+      <div class="pkglist">${versionsHtml}</div>
+    </div>`;
+  }).join('');
+
+  const nodeKeys = Object.keys(nodeRefs).sort();
+  const nodeHtml = nodeKeys.length ? `<div class="as">
+    <div class="ash">⬡ Node Versions (nvm)</div>
+    <div class="asb" style="padding:7px 9px">
+      ${nodeKeys.map(v => `<div class="pkv" onclick="filterByPkg('v${esc(v)}')">
+        <span class="pkvv">v${esc(v)}</span>
+        <span class="pkvc">${nodeRefs[v].count}×</span>
+        <span class="pkvf">${[...nodeRefs[v].files].map(i=>`<span class="dot" style="background:${files[i]?.colour||'#888'};width:6px;height:6px;margin-right:1px"></span>`).join('')}</span>
+      </div>`).join('')}
+    </div>
+  </div>` : '';
+
+  ap.innerHTML = `
+    <div class="as">
+      <div class="ash">⬡ Packages observed (${keys.length} refs · ${pkgNames.length} pkgs)</div>
+      <div class="asb" style="padding:6px 8px;max-height:none">${pkgListHtml}</div>
+    </div>
+    ${nodeHtml}`;
+}
+
+function filterByPkg(s) {
+  document.getElementById('si').value = s;
+  q = s.toLowerCase();
+  page = 0;
+  applyFilters();
+}
+
+function exportPkgs(fmt) {
+  const keys = Object.keys(pkgRefs);
+  if (!keys.length && !Object.keys(nodeRefs).length) {
+    alert('No package versions extracted yet — load some logs first.');
+    return;
+  }
+  const rows = keys.map(k => {
+    const r = pkgRefs[k];
+    const fileNames = [...r.files].map(i => files[i]?.name || `file${i}`);
+    return { package: r.pkg, version: r.version, ref_count: r.count, file_count: r.files.size, files: fileNames };
+  }).sort((a,b) => a.package === b.package ? b.ref_count - a.ref_count : a.package.localeCompare(b.package));
+  const nodeRows = Object.keys(nodeRefs).sort().map(v => ({
+    package: 'node', version: v, ref_count: nodeRefs[v].count,
+    file_count: nodeRefs[v].files.size,
+    files: [...nodeRefs[v].files].map(i => files[i]?.name || `file${i}`)
+  }));
+  const all = [...rows, ...nodeRows];
+  const ts = new Date().toISOString().replace(/[:.]/g,'-').slice(0,19);
+
+  if (fmt === 'csv') {
+    const csvEsc = v => /[",\n]/.test(String(v)) ? `"${String(v).replace(/"/g,'""')}"` : String(v);
+    const header = 'package,version,ref_count,file_count,files\n';
+    const body = all.map(r => [r.package, r.version, r.ref_count, r.file_count, r.files.join('; ')].map(csvEsc).join(',')).join('\n');
+    download(`package-versions-${ts}.csv`, header + body, 'text/csv');
+    flashOk('pkgExpCsv');
+  } else if (fmt === 'json') {
+    const payload = { generated: new Date().toISOString(), source_files: files.map(f => ({name:f.name, events:f.events.length})), packages: all };
+    download(`package-versions-${ts}.json`, JSON.stringify(payload, null, 2), 'application/json');
+    flashOk('pkgExpJson');
+  } else if (fmt === 'copy') {
+    const text = all.map(r => r.package === 'node' ? `node v${r.version}` : `${r.package}@${r.version}`).join('\n');
+    navigator.clipboard.writeText(text).then(() => flashOk('pkgExpCopy'))
+      .catch(() => { prompt('Copy failed — copy manually:', text); });
+  }
+}
+
+function download(name, content, mime) {
+  const blob = new Blob([content], {type: mime});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function flashOk(id) {
+  const b = document.getElementById(id);
+  const orig = b.textContent;
+  b.classList.add('ok'); b.textContent = '✓';
+  setTimeout(() => { b.classList.remove('ok'); b.textContent = orig; }, 1200);
+}
+
+function doSearch() { q = document.getElementById('si').value.toLowerCase(); page=0; applyFilters(); }
+function clearSearch() { q=''; document.getElementById('si').value=''; page=0; applyFilters(); }
+
+function setSev(sev, btn) {
+  sevF=sev; page=0;
+  ['fAll','fCrit','fHigh','fMed','fLow'].forEach(id => document.getElementById(id).className='fb');
+  const map = {all:'fba',critical:'fbc',high:'fbh',medium:'fbm',low:'fbl'};
+  btn.className = `fb ${map[sev]}`;
+  applyFilters();
+}
+
+function applyFilters() {
+  filtered = all.filter(e => {
+    if (sevF!=='all' && e.severity!==sevF) return false;
+    if (srcF!=='all' && e.fileIdx!=srcF) return false;
+    if (q && !e.message.toLowerCase().includes(q) && !e.ip.includes(q) && !e.type.toLowerCase().includes(q) && !e.time.includes(q) && !e.fileName.toLowerCase().includes(q)) return false;
+    return true;
+  });
+  filtered.sort((a,b) => { const av=a[sortF]??'',bv=b[sortF]??''; return av<bv?sortD:av>bv?-sortD:0; });
+  renderTable(); updateStats();
+}
+
+function doSort(f) { if(sortF===f) sortD*=-1; else{sortF=f;sortD=-1;} page=0; applyFilters(); }
+
+function renderTable() {
+  const body = document.getElementById('evtBody');
+  const slice = filtered.slice(page*PER, (page+1)*PER);
+  if (!all.length) {
+    document.getElementById('emptyState').style.display='flex';
+    document.getElementById('evtTable').style.display='none';
+    document.getElementById('evtBadge').textContent='0';
+    updatePager(); return;
+  }
+  document.getElementById('emptyState').style.display='none';
+  document.getElementById('evtTable').style.display='table';
+  document.getElementById('evtBadge').textContent=filtered.length;
+  const hlMsg = msg => q
+    ? esc(msg).replace(new RegExp(`(${esc(q).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi'), '<span class="hl">$1</span>')
+    : esc(msg.slice(0,125)) + (msg.length>125?'…':'');
+  body.innerHTML = slice.map(e => {
+    const f = files[e.fileIdx]; const col = f?.colour||'#888';
+    const sn = (f?.name||'').replace(/\.[^.]+$/,'').slice(0,10);
+    const isCorr = e.ip!=='—' && corrs[e.ip];
+    const ipH = e.ip!=='—'
+      ? `<span class="td-ip">${e.ip}${isCorr?'<span class="cm" title="Seen in multiple files">⚡</span>':''}</span>`
+      : `<span style="color:var(--t3)">—</span>`;
+    return `<tr class="s-${e.severity}" onclick="selRow(this)">
+      <td class="td-t">${e.time}</td>
+      <td><span class="bdg b-${e.severity}">${e.severity}</span></td>
+      <td><span style="font-size:9px;padding:1px 5px;border-radius:2px;background:${col}18;color:${col};border:1px solid ${col}30;font-family:'JetBrains Mono',monospace;white-space:nowrap">${sn}</span></td>
+      <td>${ipH}</td>
+      <td style="font-size:10px;white-space:nowrap;color:var(--t2)">${e.type}</td>
+      <td class="td-msg" title="${esc(e.message)}">${hlMsg(e.message)}</td>
+    </tr>`;
+  }).join('');
+  updatePager();
+}
+
+function selRow(r) { document.querySelectorAll('tr.sel').forEach(x=>x.classList.remove('sel')); r.classList.add('sel'); }
+
+function goPage(d) { const mx=Math.ceil(filtered.length/PER)-1; page=Math.max(0,Math.min(page+d,mx)); renderTable(); }
+function updatePager() {
+  const tot=filtered.length, s=page*PER+1, e=Math.min((page+1)*PER,tot), mx=Math.ceil(tot/PER)-1;
+  document.getElementById('pi').textContent = tot>0?`${s}–${e} of ${tot}`:'0 events';
+  document.getElementById('pprev').disabled = page===0;
+  document.getElementById('pnext').disabled = page>=mx;
+}
+
+function setS(m) { document.getElementById('stxt').textContent=m; }
+</script>
+</body>
+</html>

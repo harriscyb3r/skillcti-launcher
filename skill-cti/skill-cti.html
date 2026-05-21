@@ -1,0 +1,1896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SkillCTI</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:#050508; --surface:#0d0d18; --surface2:#13131f;
+    --panel-bg:var(--panel-bg);
+    --border:#1a1a2a; --border2:#2a2a3e;
+    --purple:#a855f7; --cyan:#06b6d4;
+    --text:#e8e6ff; --text2:#9c98c0; --text3:#4a4a6a;
+    --red:#ef4444; --amber:#f59e0b; --green:#22c55e;
+    --mono:'IBM Plex Mono','Fira Code',monospace;
+  }
+  :root[data-theme="light"] {
+    --bg:#ffffff; --surface:#f7f7fa; --surface2:#ececf2;
+    --panel-bg:#f9f9fc;
+    --border:#e4e4e8; --border2:#cfcfd6;
+    --text:#1a1a1a; --text2:#52525b; --text3:#9090a0;
+  }
+  html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--mono);overflow:hidden}
+  .app{display:flex;flex-direction:row;height:100vh}
+  .sidebar{width:230px;display:flex;flex-direction:column;border-right:1px solid var(--border);background:linear-gradient(180deg,var(--panel-bg),var(--bg));flex-shrink:0}
+  .sidebar-header{padding:18px 18px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:11px;flex-shrink:0}
+  .sidebar-header > div{min-width:0}
+  .sidebar-footer{padding:13px 18px;border-top:1px solid var(--border);flex-shrink:0}
+  .logo{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--purple),var(--cyan));display:flex;align-items:center;justify-content:center;padding:3px}
+  .logo svg{display:block;width:100%;height:100%}
+  .app-title{font-size:14px;font-weight:700;color:var(--text);letter-spacing:.07em;text-transform:uppercase}
+  .app-sub{font-size:9px;color:var(--text3);letter-spacing:.1em;margin-top:2px}
+  .proxy-status{display:flex;align-items:center;gap:8px}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--text3);transition:background .4s,box-shadow .4s;flex-shrink:0}
+  .dot.ok{background:var(--green);box-shadow:0 0 8px var(--green)}
+  .dot.err{background:var(--red);box-shadow:0 0 8px var(--red)}
+  .proxy-label{font-size:10px;color:var(--text3);letter-spacing:.07em}
+  .tabs{flex:1;display:flex;flex-direction:column;padding:8px 0;overflow-y:auto;gap:1px}
+  .tab{padding:11px 18px;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;border:none;background:transparent;color:var(--text3);border-left:2px solid transparent;transition:color .2s,border-color .2s,background .2s;font-family:var(--mono);text-align:left;display:block;width:100%;white-space:nowrap}
+  .tab:hover{color:var(--text2);background:rgba(168,85,247,.04)}
+  .tab.active{color:var(--purple);border-left-color:var(--purple);background:rgba(168,85,247,.08)}
+  .main{flex:1;overflow-y:auto;padding:26px;min-width:0}
+  .section-label{font-size:9px;font-weight:700;letter-spacing:.2em;color:var(--text3);margin-bottom:14px;text-transform:uppercase}
+  .subsection{margin-top:22px}
+  .subsection:first-child{margin-top:0}
+  .tab-content{display:none}
+  .tab-content.active{display:block}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:10px;position:relative;overflow:hidden;transition:border-color .2s,background .2s}
+  .card.launchable{cursor:pointer}
+  .card.launchable:hover{background:var(--surface2);border-color:var(--border2)}
+  .card-glow{position:absolute;top:0;left:0;right:0;height:2px}
+  .badge{font-size:9px;font-weight:700;letter-spacing:.14em;padding:3px 8px;border-radius:4px}
+  .card-name{font-size:14px;font-weight:700;color:var(--text);margin-bottom:2px}
+  .card-tagline{font-size:11px;color:var(--text3);line-height:1.4}
+  .card-desc{font-size:11px;color:var(--text2);line-height:1.55;flex:1}
+  .card-footer{margin-top:4px}
+  .how-to{font-size:10px;color:var(--text3);font-style:italic;line-height:1.5}
+  .launch-btn{font-size:10px;font-weight:700;letter-spacing:.1em;padding:8px 14px;border-radius:6px;border:none;background:linear-gradient(135deg,var(--purple),#7c3aed);color:#fff;cursor:pointer;font-family:var(--mono);transition:opacity .2s}
+  .launch-btn:hover{opacity:.85}
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(4px);z-index:100;display:none}
+  .overlay.open{display:block}
+  .drawer{position:fixed;top:0;right:-480px;bottom:0;width:450px;background:var(--panel-bg);border-left:1px solid var(--border);z-index:101;display:flex;flex-direction:column;transition:right .28s cubic-bezier(.4,0,.2,1)}
+  .drawer.open{right:0}
+  .drawer-header{padding:20px 20px 16px;border-bottom:1px solid var(--border)}
+  .drawer-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px}
+  .drawer-title{font-size:14px;font-weight:700;color:var(--text);margin-top:8px}
+  .drawer-desc{font-size:11px;color:var(--text2);line-height:1.55}
+  .close-btn{background:transparent;border:none;color:var(--text3);font-size:18px;cursor:pointer;padding:2px 5px;font-family:var(--mono)}
+  .close-btn:hover{color:var(--text2)}
+  .drawer-body{flex:1;padding:20px;overflow-y:auto;display:flex;flex-direction:column;gap:16px}
+  .field-label{font-size:10px;font-weight:600;letter-spacing:.08em;color:var(--text2);display:block;margin-bottom:5px;text-transform:uppercase}
+  .req{color:var(--red);margin-left:2px}
+  textarea,input[type=text],select{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:11px;padding:9px 11px;outline:none;transition:border-color .2s;line-height:1.5}
+  textarea{resize:vertical;min-height:88px}
+  textarea:focus,input[type=text]:focus,select:focus{border-color:var(--purple)}
+  select option{background:var(--surface)}
+  .search-note{font-size:10px;color:var(--text3);padding:8px 11px;background:var(--surface);border-radius:6px;border:1px solid var(--border);line-height:1.5}
+  .drawer-footer{padding:16px;border-top:1px solid var(--border)}
+  .progress-wrap{margin-bottom:10px;display:none}
+  .progress-wrap.visible{display:block}
+  .progress-bg{height:2px;background:var(--border);border-radius:2px;margin-bottom:6px}
+  .progress-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--purple),var(--cyan));width:0;transition:width .5s ease}
+  .progress-label{font-size:10px;color:var(--text3);letter-spacing:.06em;text-align:center}
+  .gen-btn{width:100%;padding:13px;border:none;border-radius:8px;color:#fff;font-size:12px;font-weight:700;letter-spacing:.1em;cursor:pointer;font-family:var(--mono);background:linear-gradient(135deg,var(--purple),#7c3aed);transition:opacity .2s}
+  .gen-btn:disabled{background:var(--surface2);color:var(--text3);cursor:not-allowed}
+  .gen-btn:not(:disabled):hover{opacity:.88}
+  .output-modal{position:fixed;inset:0;background:#000;z-index:200;display:none;flex-direction:column}
+  .output-modal.open{display:flex}
+  .output-bar{display:flex;align-items:center;justify-content:space-between;padding:10px 18px;background:var(--panel-bg);border-bottom:1px solid var(--border);flex-shrink:0}
+  .pdf-hint{display:none;background:#1a0f00;border-bottom:1px solid #ea580c;padding:8px 18px;font-size:11px;color:#fb923c;text-align:center;flex-shrink:0;letter-spacing:.03em}
+  .pdf-hint.show{display:block}
+  .pdf-hint strong{color:#fdba74;font-weight:700}
+  .output-bar-left{display:flex;align-items:center;gap:10px}
+  .output-title{font-size:13px;font-weight:700;color:var(--text)}
+  .output-date{font-size:10px;color:var(--text3)}
+  .output-actions{display:flex;gap:8px}
+  .out-btn{padding:6px 14px;font-size:10px;font-weight:700;letter-spacing:.08em;border-radius:6px;cursor:pointer;font-family:var(--mono);transition:opacity .2s}
+  .out-btn.primary{background:linear-gradient(135deg,var(--purple),#7c3aed);border:none;color:#fff}
+  .out-btn.secondary{background:transparent;border:1px solid var(--border2);color:var(--text2)}
+  .out-btn:hover{opacity:.8}
+  .output-iframe{flex:1;border:none;width:100%}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a0a0a;border:1px solid var(--red);border-radius:8px;padding:12px 20px;font-size:11px;color:var(--red);z-index:300;display:none;max-width:480px;text-align:center}
+  .toast.show{display:block}
+  .toast.ok{background:#0a1a0d;border-color:var(--green);color:var(--green)}
+  /* Chat */
+  .chat-wrap{display:flex;flex-direction:column;height:calc(100vh - 52px);max-width:920px;margin:0 auto;width:100%}
+  .chat-log{flex:1;overflow-y:auto;padding:8px 4px 16px;display:flex;flex-direction:column;gap:14px}
+  .chat-empty{text-align:center;color:var(--text3);padding:48px 20px;font-size:12px;line-height:1.7}
+  .chat-empty .examples{margin-top:22px;display:grid;grid-template-columns:1fr 1fr;gap:8px;max-width:620px;margin-left:auto;margin-right:auto}
+  .chat-empty .ex{padding:11px 13px;border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:11px;color:var(--text2);text-align:left;background:var(--surface);transition:border-color .2s,background .2s,color .2s;font-family:var(--mono);line-height:1.5}
+  .chat-empty .ex:hover{border-color:var(--purple);background:var(--surface2);color:var(--text)}
+  .msg{display:flex;flex-direction:column;gap:5px}
+  .msg.user{align-items:flex-end}
+  .msg.assistant{align-items:flex-start}
+  .msg-role{font-size:9px;color:var(--text3);letter-spacing:.14em;text-transform:uppercase;font-weight:700}
+  .msg-bubble{max-width:84%;padding:11px 14px;border-radius:10px;font-size:12px;line-height:1.6;word-wrap:break-word;overflow-wrap:break-word}
+  .msg.user .msg-bubble{background:linear-gradient(135deg,var(--purple),#7c3aed);color:#fff;border-bottom-right-radius:2px}
+  .msg.assistant .msg-bubble{background:var(--surface);border:1px solid var(--border);color:var(--text);border-bottom-left-radius:2px}
+  .msg.assistant .msg-bubble.error{border-color:var(--red);background:#1a0a0a;color:var(--red)}
+  .msg-bubble code{background:rgba(168,85,247,.15);padding:1px 5px;border-radius:3px;font-family:var(--mono);font-size:11px}
+  .msg-bubble pre{background:var(--bg);border:1px solid var(--border);padding:10px;border-radius:6px;overflow-x:auto;font-family:var(--mono);font-size:11px;margin:8px 0;line-height:1.5}
+  .msg-bubble pre code{background:none;padding:0}
+  .msg-bubble a{color:var(--cyan);text-decoration:underline}
+  .msg-bubble strong{color:var(--text);font-weight:700}
+  .thinking{font-style:italic;color:var(--text3)}
+  .thinking::after{content:'...';animation:dots 1.4s infinite}
+  @keyframes dots{0%,20%{content:'.'}40%{content:'..'}60%,100%{content:'...'}}
+  .launch-card{margin-top:12px;padding:12px;background:var(--bg);border:1px solid var(--purple);border-radius:8px;display:flex;flex-direction:column;gap:8px}
+  .launch-card-label{font-size:9px;color:var(--purple);letter-spacing:.14em;text-transform:uppercase;font-weight:700}
+  .launch-card-skill{font-size:13px;font-weight:700;color:var(--text)}
+  .launch-card-desc{font-size:11px;color:var(--text2);line-height:1.5}
+  .launch-card-btn{padding:9px 14px;font-size:10px;font-weight:700;letter-spacing:.1em;background:linear-gradient(135deg,var(--purple),#7c3aed);color:#fff;border:none;border-radius:6px;cursor:pointer;font-family:var(--mono);transition:opacity .2s}
+  .launch-card-btn:hover{opacity:.85}
+  .chat-input-row{display:flex;gap:8px;padding:14px 4px 0;border-top:1px solid var(--border);margin-top:8px;flex-shrink:0}
+  #chatInput{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--mono);font-size:12px;padding:11px 13px;outline:none;resize:none;min-height:46px;max-height:160px;line-height:1.5;transition:border-color .2s}
+  #chatInput:focus{border-color:var(--purple)}
+  .chat-send{padding:0 24px;border:none;border-radius:8px;background:linear-gradient(135deg,var(--purple),#7c3aed);color:#fff;font-size:11px;font-weight:700;letter-spacing:.1em;cursor:pointer;font-family:var(--mono);transition:opacity .2s;align-self:stretch}
+  .chat-send:hover:not(:disabled){opacity:.85}
+  .chat-send:disabled{opacity:.4;cursor:not-allowed}
+  /* Dashboard (Home tab) */
+  .dashboard{display:grid;grid-template-columns:1fr 1fr;gap:18px;max-width:1180px;margin:0 auto}
+  @media (max-width:980px){.dashboard{grid-template-columns:1fr}}
+  .widget{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px;display:flex;flex-direction:column;gap:12px;min-height:280px}
+  .widget-header{display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .widget-title{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text2);margin:0;display:flex;align-items:center;gap:10px}
+  .widget-sub{font-size:9px;color:var(--text3);font-weight:500;letter-spacing:.06em;text-transform:none}
+  .widget-action{background:transparent;border:none;color:var(--text3);font-size:9px;font-weight:700;letter-spacing:.08em;cursor:pointer;font-family:var(--mono);text-transform:uppercase;padding:3px 6px;border-radius:4px;transition:color .2s,background .2s}
+  .widget-action:hover{color:var(--purple);background:var(--surface2)}
+  .widget-body{flex:1;display:flex;flex-direction:column;gap:6px;min-height:0}
+  .widget-empty{color:var(--text3);font-size:11px;text-align:center;padding:32px 12px;font-style:italic;line-height:1.6}
+  .widget-error{color:var(--red);font-size:11px;text-align:center;padding:24px 12px;line-height:1.5}
+  .recent-item{display:flex;align-items:center;gap:10px;padding:9px 11px;border:1px solid var(--border);border-radius:6px;cursor:pointer;transition:border-color .2s,background .2s;text-align:left;background:transparent;color:var(--text);font-family:inherit}
+  .recent-item:hover{border-color:var(--border2);background:var(--surface2)}
+  .recent-title{font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;font-weight:500}
+  .recent-meta{font-size:9px;color:var(--text3);white-space:nowrap;letter-spacing:.04em}
+  .news-item{padding:9px 11px;border-left:2px solid var(--border2);font-size:11px;line-height:1.5}
+  .news-item a.news-headline{color:var(--text);font-weight:600;display:block;margin-bottom:3px;text-decoration:underline;text-decoration-color:transparent;text-underline-offset:3px;text-decoration-thickness:1px;transition:color .2s,text-decoration-color .2s}
+  .news-item a.news-headline:hover{color:var(--purple);text-decoration-color:var(--purple)}
+  .news-item a.news-headline:visited{color:var(--text2)}
+  .news-ext{font-size:9px;color:var(--text3);margin-left:2px;font-weight:400;transition:color .2s}
+  .news-item a.news-headline:hover .news-ext{color:var(--purple)}
+  .news-summary{color:var(--text2);font-size:10.5px;display:block;margin-bottom:3px}
+  .news-source{color:var(--text3);font-size:9px;letter-spacing:.06em;text-transform:uppercase;font-weight:600}
+  .rw-item{display:grid;grid-template-columns:1fr auto;gap:8px 12px;padding:9px 11px;border:1px solid var(--border);border-radius:6px;font-size:11px;line-height:1.4;align-items:start}
+  .rw-victim{color:var(--text);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .rw-group{color:var(--red);font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
+  .rw-meta{grid-column:1/-1;color:var(--text3);font-size:9.5px;letter-spacing:.04em;display:flex;gap:10px;flex-wrap:wrap}
+  .quickask-input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:11px;padding:10px 11px;outline:none;resize:vertical;min-height:90px;line-height:1.5;transition:border-color .2s}
+  .quickask-input:focus{border-color:var(--purple)}
+  .quickask-send{padding:10px 14px;border:none;border-radius:6px;background:linear-gradient(135deg,var(--purple),#7c3aed);color:#fff;font-size:10px;font-weight:700;letter-spacing:.1em;cursor:pointer;font-family:var(--mono);transition:opacity .2s;align-self:flex-start}
+  .quickask-send:hover{opacity:.85}
+  .history-controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 16px;padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px}
+  .history-controls input[type=text]{flex:2 1 200px;min-width:160px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:11px;padding:7px 10px;outline:none;transition:border-color .2s}
+  .history-controls input[type=text]:focus{border-color:var(--purple)}
+  .history-controls select{flex:1 1 130px;min-width:130px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:11px;padding:7px 10px;outline:none;transition:border-color .2s;cursor:pointer}
+  .history-controls select:focus{border-color:var(--purple)}
+  .filtered-count{font-size:10px;color:var(--text3);letter-spacing:.08em;margin-left:auto;font-family:var(--mono);font-weight:600;text-transform:uppercase;white-space:nowrap}
+  .history-meta{display:flex;justify-content:space-between;align-items:center;font-size:10px;color:var(--text3);margin-top:6px}
+  .history-actions{display:flex;gap:6px;margin-top:8px}
+  .hist-btn{flex:1;font-size:10px;font-weight:700;letter-spacing:.08em;padding:7px 10px;border-radius:6px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;font-family:var(--mono);transition:background .2s,color .2s,border-color .2s}
+  .hist-btn:hover{background:var(--surface2);color:var(--text)}
+  .hist-btn.danger:hover{border-color:var(--red);color:var(--red)}
+  .hist-btn.primary{background:linear-gradient(135deg,var(--purple),#7c3aed);border-color:transparent;color:#fff}
+  .hist-btn.primary:hover{opacity:.85;color:#fff}
+  ::-webkit-scrollbar{width:5px;height:5px}
+  ::-webkit-scrollbar-track{background:var(--bg)}
+  ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+  /* Theme toggle + Cmd-K hint in sidebar footer */
+  .sidebar-footer{display:flex;flex-direction:column;gap:10px}
+  .sidebar-actions{display:flex;align-items:center;gap:8px}
+  .icon-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;background:transparent;border:1px solid var(--border);border-radius:6px;color:var(--text2);padding:7px 9px;font-size:9px;font-weight:700;letter-spacing:.1em;cursor:pointer;font-family:var(--mono);transition:border-color .2s,color .2s,background .2s}
+  .icon-btn:hover{border-color:var(--border2);color:var(--text);background:var(--surface)}
+  .icon-btn svg{width:13px;height:13px;flex-shrink:0}
+  .kbd{display:inline-block;font-family:var(--mono);font-size:8px;font-weight:700;padding:1px 5px;border:1px solid var(--border);border-radius:3px;background:var(--surface);color:var(--text3);letter-spacing:.05em}
+  /* Cmd+K command palette */
+  .cmdk-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);z-index:400;display:none}
+  .cmdk-overlay.open{display:block}
+  .cmdk{position:fixed;top:110px;left:50%;transform:translateX(-50%);width:580px;max-width:92vw;background:var(--surface);border:1px solid var(--border2);border-radius:12px;z-index:401;display:none;flex-direction:column;overflow:hidden;box-shadow:0 30px 70px rgba(0,0,0,.55)}
+  .cmdk.open{display:flex}
+  .cmdk-input{background:transparent;border:none;outline:none;color:var(--text);font-family:var(--mono);font-size:13px;padding:18px 20px;border-bottom:1px solid var(--border)}
+  .cmdk-input::placeholder{color:var(--text3)}
+  .cmdk-list{max-height:380px;overflow-y:auto;padding:6px 0}
+  .cmdk-item{display:flex;align-items:center;gap:11px;padding:10px 18px;cursor:pointer;color:var(--text2);border-left:2px solid transparent}
+  .cmdk-item.selected{background:rgba(168,85,247,.1);color:var(--text);border-left-color:var(--purple)}
+  .cmdk-item-badge{font-size:8px;font-weight:700;letter-spacing:.12em;padding:2px 6px;border-radius:3px;background:var(--surface2);color:var(--text3);white-space:nowrap;flex-shrink:0}
+  .cmdk-item-label{font-size:12px;flex-shrink:0}
+  .cmdk-item-meta{font-size:10px;color:var(--text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
+  .cmdk-empty{padding:32px 20px;text-align:center;color:var(--text3);font-size:11px}
+  .cmdk-footer{padding:9px 18px;border-top:1px solid var(--border);display:flex;gap:14px;font-size:9px;color:var(--text3);letter-spacing:.06em;text-transform:uppercase;font-weight:600;background:var(--bg)}
+  .cmdk-footer .kbd{font-size:8px;padding:1px 4px;margin-right:4px}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-label="Hex node cluster">
+          <g fill="none" stroke="#fff" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round">
+            <polygon points="26,19.46 24,22.93 20,22.93 18,19.46 20,16 24,16"/>
+            <polygon points="26,12.54 24,16 20,16 18,12.54 20,9.07 24,9.07"/>
+            <polygon points="20,9.07 18,12.54 14,12.54 12,9.07 14,5.61 18,5.61"/>
+            <polygon points="14,12.54 12,16 8,16 6,12.54 8,9.07 12,9.07"/>
+            <polygon points="14,19.46 12,22.93 8,22.93 6,19.46 8,16 12,16"/>
+            <polygon points="20,22.93 18,26.39 14,26.39 12,22.93 14,19.46 18,19.46"/>
+          </g>
+          <polygon points="20,16 18,19.46 14,19.46 12,16 14,12.54 18,12.54" fill="#fff" stroke="#fff" stroke-width="1.1" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div>
+        <div class="app-title">SkillCTI</div>
+        <div class="app-sub"><span id="totalSkillCount">…</span> SKILLS + ANALYST</div>
+      </div>
+    </div>
+    <nav class="tabs">
+      <button class="tab active" onclick="switchTab('home',this)">Home <span style="opacity:.4">DASHBOARD</span></button>
+      <button class="tab" onclick="switchTab('analyst',this)">CTI Analyst <span style="opacity:.4">CHAT</span></button>
+      <button class="tab" onclick="switchTab('reports',this)">CTI Reports <span style="opacity:.4" data-tab-count="reports"></span></button>
+      <button class="tab" onclick="switchTab('ondemand',this)">On-Demand CTI <span style="opacity:.4" data-tab-count="ondemand"></span></button>
+      <button class="tab" onclick="switchTab('dfir',this)">DFIR Activities <span style="opacity:.4" data-tab-count="dfir"></span></button>
+      <button class="tab" onclick="switchTab('strategy',this)">Strategy <span style="opacity:.4" data-tab-count="strategy"></span></button>
+      <button class="tab" onclick="switchTab('history',this);refreshHistory()">History <span style="opacity:.4" id="historyTabCount">(0)</span></button>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="proxy-status">
+        <div class="dot" id="proxyDot"></div>
+        <span class="proxy-label" id="proxyLabel">CHECKING PROXY...</span>
+      </div>
+      <div class="sidebar-actions">
+        <button class="icon-btn" onclick="openCmdk()" title="Open search (Ctrl/Cmd+K)">
+          <span>SEARCH</span>
+        </button>
+        <button class="icon-btn" id="themeToggle" onclick="toggleTheme()" title="Toggle light / dark theme">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="themeIcon"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+          <span id="themeLabel">DARK</span>
+        </button>
+      </div>
+    </div>
+  </aside>
+  <main class="main">
+    <div class="tab-content active" id="tab-home">
+      <div class="dashboard">
+        <div class="widget">
+          <div class="widget-header">
+            <h3 class="widget-title">Recent Reports</h3>
+            <button class="widget-action" onclick="switchTab('history',document.querySelector('.tab[onclick*=&quot;history&quot;]'));refreshHistory()">View all →</button>
+          </div>
+          <div class="widget-body" id="dashRecent">
+            <div class="widget-empty">Loading…</div>
+          </div>
+        </div>
+        <div class="widget">
+          <div class="widget-header">
+            <h3 class="widget-title">Daily Cyber News <span class="widget-sub" id="dashNewsDate"></span></h3>
+            <button class="widget-action" onclick="refreshDashNews(true)" title="Force refresh — uses API tokens">↻ Refresh</button>
+          </div>
+          <div class="widget-body" id="dashNews">
+            <div class="widget-empty">Loading today's headlines…</div>
+          </div>
+        </div>
+        <div class="widget">
+          <div class="widget-header">
+            <h3 class="widget-title">AU Ransomware Victims <span class="widget-sub">last 30 days · ransomware.live</span></h3>
+            <button class="widget-action" onclick="refreshDashRansom(true)" title="Force refresh">↻ Refresh</button>
+          </div>
+          <div class="widget-body" id="dashRansom">
+            <div class="widget-empty">Loading…</div>
+          </div>
+        </div>
+        <div class="widget">
+          <div class="widget-header">
+            <h3 class="widget-title">Quick Ask Analyst</h3>
+            <button class="widget-action" onclick="switchTab('analyst',document.querySelector('.tab[onclick*=&quot;analyst&quot;]'))">Open chat →</button>
+          </div>
+          <div class="widget-body">
+            <p style="font-size:11px;color:var(--text3);margin:0 0 4px;line-height:1.5">Type a CTI question — Enter to send it straight to the analyst chat.</p>
+            <textarea id="dashQuickAsk" class="quickask-input" rows="3" placeholder="e.g. What CVEs are being actively exploited this week?"></textarea>
+            <button class="quickask-send" onclick="dashQuickAskSubmit()">SEND TO ANALYST →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="tab-content" id="tab-analyst">
+      <div class="chat-wrap">
+        <div class="chat-log" id="chatLog"></div>
+        <div class="chat-input-row">
+          <textarea id="chatInput" placeholder="Ask anything CTI — quick question, intel lookup, or full report request..."></textarea>
+          <button class="chat-send" id="chatSend" onclick="sendChat()">SEND</button>
+        </div>
+      </div>
+    </div>
+    <div class="tab-content" id="tab-reports">
+      <div class="subsection">
+        <div class="section-label">// Daily Briefings — 24-hour news roundup, train-read length</div>
+        <div class="grid" id="grid-daily"></div>
+      </div>
+      <div class="subsection">
+        <div class="section-label">// Monthly Reports — Australia</div>
+        <div class="grid" id="grid-monthly-au"></div>
+      </div>
+      <div class="subsection">
+        <div class="section-label">// Monthly Reports — Global</div>
+        <div class="grid" id="grid-monthly-global"></div>
+      </div>
+      <div class="subsection">
+        <div class="section-label">// Sector Reports — Long-horizon vertical deep-dives</div>
+        <div class="grid" id="grid-sector"></div>
+      </div>
+    </div>
+    <div class="tab-content" id="tab-ondemand">
+      <div class="section-label">// On-Demand CTI — Single-event, ad-hoc, or investigation-driven outputs</div>
+      <div class="grid" id="grid-ondemand"></div>
+    </div>
+    <div class="tab-content" id="tab-dfir">
+      <div class="section-label">// DFIR Activities — Investigation, detection engineering, and exercise prep</div>
+      <div class="grid" id="grid-dfir"></div>
+    </div>
+    <div class="tab-content" id="tab-strategy">
+      <div class="section-label">// Strategy — Forward-looking advisory, threat modelling, and exercise prep</div>
+      <div class="grid" id="grid-strategy"></div>
+    </div>
+    <div class="tab-content" id="tab-history">
+      <div class="section-label">
+        // Saved Reports —
+        <span id="historyHint">stored in ./reports/ next to proxy.py</span>
+      </div>
+      <div class="history-controls" id="historyControls">
+        <input type="text" id="historySearch" placeholder="Search title or skill..." autocomplete="off" spellcheck="false">
+        <select id="historyCategory" title="Filter by category">
+          <option value="all">ALL CATEGORIES</option>
+          <option value="daily">Daily briefs</option>
+          <option value="monthly">Monthly reports</option>
+          <option value="sector">Sector reports</option>
+          <option value="ondemand">On-demand CTI</option>
+          <option value="dfir">DFIR activities</option>
+          <option value="strategy">Strategy</option>
+          <option value="imported">Imported</option>
+          <option value="other">Other</option>
+        </select>
+        <select id="historyFormat" title="Filter by format">
+          <option value="all">All formats</option>
+          <option value="html">HTML only</option>
+          <option value="pdf">PDF only</option>
+          <option value="pptx">PowerPoint only</option>
+        </select>
+        <select id="historySort" title="Sort order">
+          <option value="newest">Newest first</option>
+          <option value="oldest">Oldest first</option>
+          <option value="title-asc">Title A → Z</option>
+          <option value="title-desc">Title Z → A</option>
+          <option value="size-desc">Largest first</option>
+          <option value="size-asc">Smallest first</option>
+        </select>
+        <span class="filtered-count" id="filteredCount"></span>
+      </div>
+      <div id="historyEmpty" style="display:none;color:var(--text3);font-size:12px;padding:40px 0;text-align:center;line-height:1.7">
+        No reports saved yet.<br>
+        <span style="font-size:10px">Generate one from any CTI skill — it auto-saves here.</span>
+      </div>
+      <div id="historyNoMatch" style="display:none;color:var(--text3);font-size:12px;padding:40px 0;text-align:center;line-height:1.7">
+        No reports match the current filter.<br>
+        <span style="font-size:10px">Try clearing the search or relaxing the category / format.</span>
+      </div>
+      <div class="grid" id="grid-history"></div>
+    </div>
+  </main>
+</div>
+
+<div class="overlay" id="overlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-header">
+    <div class="drawer-top">
+      <div>
+        <div id="drawerBadge"></div>
+        <div class="drawer-title" id="drawerTitle"></div>
+      </div>
+      <button class="close-btn" onclick="closeDrawer()">✕</button>
+    </div>
+    <div class="drawer-desc" id="drawerDesc"></div>
+  </div>
+  <div class="drawer-body" id="drawerBody"></div>
+  <div class="drawer-footer">
+    <div class="progress-wrap" id="progressWrap">
+      <div class="progress-bg"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="progress-label" id="progressLabel"></div>
+    </div>
+    <button class="gen-btn" id="genBtn" onclick="generate()">GENERATE</button>
+  </div>
+</div>
+
+<div class="output-modal" id="outputModal">
+  <div class="output-bar">
+    <div class="output-bar-left">
+      <span id="outputBadge"></span>
+      <span class="output-title" id="outputTitle"></span>
+      <span class="output-date" id="outputDate"></span>
+    </div>
+    <div class="output-actions">
+      <button class="out-btn primary" onclick="presentOutput()" title="Fullscreen, larger type, projector-ready">▶ PRESENT</button>
+      <button class="out-btn primary" onclick="printOutput()">🖨 PRINT / SAVE PDF</button>
+      <button class="out-btn primary" onclick="downloadOutput()">↓ DOWNLOAD HTML</button>
+      <button class="out-btn secondary" onclick="closeOutput()">✕ CLOSE</button>
+    </div>
+  </div>
+  <div class="pdf-hint" id="pdfHint">
+    <strong>PDF MODE</strong> — opening in a new tab where the print dialog will fire automatically. Choose <strong>"Save as PDF"</strong> as the destination. If your browser blocks the pop-up, allow it for this page and click <strong>PRINT / SAVE PDF</strong> again.
+  </div>
+  <iframe class="output-iframe" id="outputFrame" sandbox="allow-scripts allow-same-origin allow-modals allow-popups" allowfullscreen allow="fullscreen"></iframe>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="cmdk-overlay" id="cmdkOverlay" onclick="closeCmdk()"></div>
+<div class="cmdk" id="cmdk">
+  <input class="cmdk-input" id="cmdkInput" placeholder="Search skills, tabs, or saved reports..." autocomplete="off" spellcheck="false">
+  <div class="cmdk-list" id="cmdkList"></div>
+  <div class="cmdk-footer">
+    <span><span class="kbd">↑</span><span class="kbd">↓</span> navigate</span>
+    <span><span class="kbd">↵</span> select</span>
+    <span><span class="kbd">esc</span> close</span>
+  </div>
+</div>
+
+<script src="skills.js"></script>
+<script>
+const PROXY = 'http://localhost:8765';
+
+// ── State ─────────────────────────────────────────────────────
+
+let activeSkill = null;
+let currentOutput = {html:'', skill:null, format:'html'};
+
+// ── Proxy health ──────────────────────────────────────────────
+
+let proxyMissCount = 0;
+async function checkProxy() {
+  const dot = document.getElementById('proxyDot');
+  const lbl = document.getElementById('proxyLabel');
+  try {
+    const r = await fetch(PROXY + '/health', { signal: AbortSignal.timeout(3000) });
+    if (!r.ok) throw new Error();
+    proxyMissCount = 0;
+    dot.className='dot ok';
+    lbl.textContent='PROXY CONNECTED · localhost:8765';
+  } catch {
+    proxyMissCount++;
+    // Only flip to OFFLINE after two consecutive misses — avoids flicker on a
+    // single transient timeout (e.g. health check fired during a slow request).
+    if (proxyMissCount >= 2) {
+      dot.className='dot err';
+      lbl.textContent='PROXY OFFLINE — run: python proxy.py';
+    }
+  }
+}
+
+// ── Render ────────────────────────────────────────────────────
+
+function badge(text, color) {
+  return `<span class="badge" style="background:${color}22;color:${color};border:1px solid ${color}44">${text}</span>`;
+}
+
+function openExternal(url){ window.open(url, '_blank', 'noopener'); }
+
+function renderGrid(skills, id, isDoc) {
+  document.getElementById(id).innerHTML = skills.map(s => {
+    const isExternal = !!s.external;
+    const launchable = !isDoc;
+    const cardClick = isDoc ? '' :
+      isExternal ? `onclick="openExternal('${s.url}')"` :
+      `onclick="openDrawer('${s.id}')"`;
+    const footer = isDoc
+      ? `<div class="how-to">${s.howToUse}</div>`
+      : isExternal
+        ? `<button class="launch-btn" onclick="event.stopPropagation();openExternal('${s.url}')">OPEN DASHBOARD ↗</button>`
+        : `<button class="launch-btn" onclick="event.stopPropagation();openDrawer('${s.id}')">LAUNCH →</button>`;
+    return `
+    <div class="card${launchable?' launchable':''}" ${cardClick}>
+      <div class="card-glow" style="background:linear-gradient(90deg,${s.badgeColor}55,transparent)"></div>
+      <div>${badge(s.badge, s.badgeColor)}</div>
+      <div>
+        <div class="card-name">${s.name}</div>
+        <div class="card-tagline">${s.tagline||''}</div>
+      </div>
+      <div class="card-desc">${s.description}</div>
+      <div class="card-footer">${footer}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── Tabs ──────────────────────────────────────────────────────
+
+function switchTab(tab, el) {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-'+tab).classList.add('active');
+}
+
+// ── Drawer ────────────────────────────────────────────────────
+
+function openDrawer(id) {
+  const skill = CTI_SKILLS.find(s=>s.id===id);
+  if (!skill || skill.external) return;
+  activeSkill = skill;
+  document.getElementById('drawerBadge').innerHTML = badge(skill.badge, skill.badgeColor);
+  document.getElementById('drawerTitle').textContent = skill.name;
+  document.getElementById('drawerDesc').textContent = skill.description;
+  document.getElementById('drawerBody').innerHTML = skill.inputs.map(inp=>`
+    <div>
+      <label class="field-label">${inp.label}${inp.required?'<span class="req">*</span>':''}</label>
+      ${inp.type==='textarea'
+        ?`<textarea id="inp_${inp.id}" placeholder="${inp.placeholder||''}" rows="4"></textarea>`
+        :inp.type==='select'
+        ?`<select id="inp_${inp.id}">${inp.options.map(o=>`<option>${o}</option>`).join('')}</select>`
+        :`<input type="text" id="inp_${inp.id}" placeholder="${inp.placeholder||''}">`}
+    </div>`).join('')
+    + `<div>
+        <label class="field-label">Output Format</label>
+        <select id="inp__format">
+          <option value="html">HTML — dark editorial, web view</option>
+          <option value="pdf">PDF — light theme, A4, client-deliverable</option>
+          <option value="pptx">PowerPoint — white + purple, professional deck</option>
+        </select>
+      </div>`
+    + (skill.needsSearch?`<div class="search-note">⚡ This skill searches the web in real-time. Allow 30–120 seconds for long reports.</div>`:'');
+  const btn = document.getElementById('genBtn');
+  btn.textContent = 'GENERATE '+skill.badge;
+  btn.disabled = false;
+  document.getElementById('progressWrap').classList.remove('visible');
+  document.getElementById('overlay').classList.add('open');
+  document.getElementById('drawer').classList.add('open');
+}
+
+function closeDrawer() {
+  document.getElementById('overlay').classList.remove('open');
+  document.getElementById('drawer').classList.remove('open');
+  activeSkill = null;
+}
+
+// ── Generate ──────────────────────────────────────────────────
+
+async function generate() {
+  if (!activeSkill) return;
+  const values = {};
+  for (const inp of activeSkill.inputs) {
+    values[inp.id] = (document.getElementById('inp_'+inp.id)?.value||'').trim();
+    if (inp.required && !values[inp.id]) { showToast(`"${inp.label}" is required`); return; }
+  }
+  const format = document.getElementById('inp__format')?.value || 'html';
+  const dot = document.getElementById('proxyDot');
+  if (!dot.classList.contains('ok')) { showToast('Proxy is offline — run: python proxy.py'); return; }
+
+  const btn = document.getElementById('genBtn');
+  btn.disabled = true; btn.textContent = 'GENERATING...';
+  const pw = document.getElementById('progressWrap');
+  const pf = document.getElementById('progressFill');
+  const pl = document.getElementById('progressLabel');
+  pw.classList.add('visible');
+
+  const msgs = activeSkill.needsSearch
+    ? ['Initialising','Searching the web','Fetching sources','Analysing intelligence','Building report']
+    : ['Initialising','Reading input','Analysing content','Building structure','Generating output'];
+
+  // Estimate total duration: web search adds ~40s, large token budgets add
+  // roughly 1s per 400 extra tokens above the 8000 baseline. Cap progress
+  // at 92% so the bar always has room to jump to 100% on actual completion.
+  const estTotalMs = ((activeSkill.needsSearch ? 60 : 25)
+    + Math.max(0, (activeSkill.maxTokens||8000) - 8000) / 400) * 1000;
+  const startTs = Date.now();
+
+  function setProgress(pct, msg) {
+    const clamped = Math.max(0, Math.min(100, Math.round(pct)));
+    pf.style.width = clamped + '%';
+    pl.textContent = (msg || 'Working') + ' · ' + clamped + '%';
+  }
+
+  setProgress(2, msgs[0]);
+  const iv = setInterval(() => {
+    const elapsed = Date.now() - startTs;
+    const pct = Math.min(92, (elapsed / estTotalMs) * 92);
+    const stepIdx = Math.min(msgs.length - 1, Math.floor((elapsed / estTotalMs) * msgs.length));
+    setProgress(pct, msgs[stepIdx]);
+  }, 400);
+
+  try {
+    // The per-skill prompts include styling specs that read as "neon cyberpunk
+    // dashboard". For both PDF and HTML modes we sandwich the skill's content
+    // spec inside a STRONG visual override so the model can't accidentally
+    // fall back to the original dark/neon look. The two overrides aim at
+    // different output targets:
+    //   PDF_FORMAT_OVERRIDE — print-ready client deliverable (light theme, A4)
+    //   HTML_STYLE_OVERRIDE — refined editorial dark theme (Bloomberg / Mandiant)
+    // System prompt is structured as an array of 2 blocks so Anthropic's
+    // prompt cache can hit:
+    //   Block 1 (formatBlock) — the format override (HTML / PDF / PPTX).
+    //     Identical across ALL skills running in the same format mode →
+    //     cache hits the moment any other skill runs in the same mode within
+    //     the 5-minute TTL.
+    //   Block 2 (skillBlock)  — the per-skill spec, content-spec wrapper,
+    //     final reminder, and citation requirement (where applicable).
+    //     Identical across all runs of THAT skill in THAT mode → cache hits
+    //     when you iterate on the same skill (which is the common case).
+    // Both blocks marked cacheable. Cached input tokens cost ~10% of full price.
+    // Blocks below the model's cache minimum (1024 tokens) won't actually
+    // cache — the API silently treats them as uncached, no error.
+    let formatBlock, skillBlock;
+    if (format === 'pdf') {
+      formatBlock = PDF_FORMAT_OVERRIDE;
+      skillBlock = '=== CONTENT SPECIFICATION (use ONLY for sections, headings, narrative flow, citations — IGNORE every styling, theme, colour, font, JS, layout, and CSS instruction below) ===\n\n'
+        + activeSkill.systemPrompt
+        + '\n\n=== END CONTENT SPECIFICATION ===\n\n'
+        + 'FINAL REMINDER: This is PDF MODE. Render using the PDF visual specification at the TOP of this system prompt. The content spec above tells you WHAT sections to write — it does NOT dictate the visual style. Cite sources liberally as the spec requires. White background, sans-serif Helvetica/Arial, numbered H2 sections, blue H3 sub-headings (#1e40af), orange TLP pill (top-right of title block only), dark-red citation superscripts that are clickable <a href="#ref-N"> anchors per the citation formatting block below. NO repeating page header. NO running footer. NO position:fixed elements anywhere. NO page numbers. NO dark backgrounds. NO neon colours. NO JavaScript. NO copy buttons. NO collapsibles. Output the PDF-style HTML now.'
+        + '\n\n' + CITATION_REQUIREMENT;
+    } else if (format === 'pptx') {
+      formatBlock = PPTX_OUTLINE_OVERRIDE;
+      skillBlock = '=== CONTENT SPECIFICATION (use ONLY for sections, narrative flow, citations — IGNORE every styling, HTML, theme, colour, font, JS, layout, and CSS instruction below. The PowerPoint template handles all visual rendering.) ===\n\n'
+        + activeSkill.systemPrompt
+        + '\n\n=== END CONTENT SPECIFICATION ===\n\n'
+        + 'FINAL REMINDER: This is POWERPOINT MODE. Output ONLY the JSON slide-outline object specified at the TOP of this system prompt. Do NOT output HTML. Do NOT wrap the JSON in markdown fences. Do NOT include any prose before or after. The proxy will render your JSON into a white + purple professional .pptx using a fixed template — your job is to produce a correct, well-structured outline. Translate the report content into 10–18 slides total (longer for operational monthlies and sector deep-dives; 6–8 for daily briefs). Cite sources with [n] markers in bullets/cells and include a references slide. Respect all length limits in the schema.';
+      // PPTX mode doesn't need clickable <a> anchors but citations are still
+      // required in bullets and references slide — the schema enforces that.
+    } else {
+      formatBlock = HTML_STYLE_OVERRIDE;
+      skillBlock = '=== CONTENT SPECIFICATION (use ONLY for sections, headings, narrative flow, citations — IGNORE every styling, theme, colour, font, JS, layout, and CSS instruction below) ===\n\n'
+        + activeSkill.systemPrompt
+        + '\n\n=== END CONTENT SPECIFICATION ===\n\n'
+        + 'FINAL REMINDER: This is HTML MODE. Render using the editorial dark theme defined at the TOP of this system prompt — Bloomberg / Mandiant style, NOT a cyberpunk dashboard. The content spec above tells you WHAT sections to write — its styling instructions (purple, cyan, glowing cards, neon pills, card-everything) are SUPERSEDED. Use ONLY the palette and components from the HTML visual style block. Cite sources liberally as the spec requires.'
+        + '\n\n' + CITATION_REQUIREMENT;
+    }
+    const body = {
+      model:'claude-sonnet-4-20250514',
+      max_tokens:activeSkill.maxTokens||8000,
+      system: [
+        { type: 'text', text: formatBlock, cache_control: { type: 'ephemeral' } },
+        { type: 'text', text: skillBlock,  cache_control: { type: 'ephemeral' } },
+      ],
+      messages:[{role:'user',content:activeSkill.buildMsg(values)}]
+    };
+    if (activeSkill.needsSearch) body.tools=[{type:'web_search_20250305',name:'web_search'}];
+
+    const resp = await fetch(PROXY+'/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(body)
+    });
+    clearInterval(iv);
+    if (!resp.ok) {
+      const e = await resp.json().catch(()=>({}));
+      throw new Error(e.error?.message||`API error ${resp.status}`);
+    }
+    const data = await resp.json();
+    let html = '';
+    for (const b of (data.content||[])) { if (b.type==='text') html+=b.text; }
+    clearInterval(iv);
+    // Strip code fences from any response — model often wraps html OR json
+    html = html.replace(/^```(?:html|json)?\s*/i,'').replace(/```\s*$/,'').trim();
+    // Surface prompt-cache stats so we can see the optimization working
+    const cacheStats = formatCacheStats(data.usage);
+    const inProgressLabel =
+      format === 'pdf'  ? 'Report generated' + cacheStats :
+      format === 'pptx' ? 'Outline generated' + cacheStats :
+                          'Complete' + cacheStats;
+    setProgress(format === 'html' ? 100 : 85, inProgressLabel);
+    const snap = activeSkill;
+    const inputSnap = {...values};
+
+    if (format === 'pptx') {
+      // PPTX mode: model returned JSON outline. Ship to the proxy to render
+      // into a real .pptx via python-pptx, then trigger download + save to history.
+      setProgress(88, 'Building PowerPoint deck');
+      try {
+        let outline;
+        try {
+          outline = JSON.parse(html);
+        } catch (parseErr) {
+          // Try to extract the first JSON object if the model wrapped it
+          const m = html.match(/\{[\s\S]*\}\s*$/);
+          if (!m) throw new Error('model did not return parseable JSON: ' + parseErr.message);
+          outline = JSON.parse(m[0]);
+        }
+        const ts = new Date();
+        const stamp = ts.toISOString().replace(/[:.]/g,'-').slice(0,19);
+        const id = `${stamp}-${snap.id}-pptx`;
+        const titleFromOutline = (outline.meta && outline.meta.title) || snap.name;
+        const meta = {
+          id,
+          skillId: snap.id,
+          skillName: snap.name,
+          badge: snap.badge,
+          badgeColor: snap.badgeColor,
+          timestamp: ts.toISOString(),
+          title: titleFromOutline,
+          inputs: inputSnap,
+          format: 'pptx'
+        };
+        const pptxResp = await fetch(PROXY+'/generate-pptx', {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ meta, outline })
+        });
+        if (!pptxResp.ok) {
+          const errJson = await pptxResp.json().catch(()=>({}));
+          throw new Error(errJson.error || `PPTX build failed (HTTP ${pptxResp.status})`);
+        }
+        const pptxBlob = await pptxResp.blob();
+        const url = URL.createObjectURL(pptxBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${id}.pptx`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
+        setProgress(100, 'Complete');
+        showToast('PowerPoint downloaded · saved to history', 'ok');
+        refreshHistory();
+        setTimeout(() => closeDrawer(), 400);
+      } catch (pptxErr) {
+        pw.classList.remove('visible');
+        btn.disabled=false; btn.textContent='GENERATE '+(activeSkill?.badge||'');
+        showToast('PPTX error: '+pptxErr.message);
+      }
+    } else if (format === 'pdf') {
+      // PDF mode: ship the generated HTML to the proxy for server-side
+      // headless-browser conversion. The proxy returns a real .pdf binary
+      // which we trigger as a download AND save into history.
+      setProgress(88, 'Converting to PDF');
+      try {
+        const ts = new Date();
+        const stamp = ts.toISOString().replace(/[:.]/g,'-').slice(0,19);
+        const id = `${stamp}-${snap.id}-pdf`;
+        const meta = {
+          id,
+          skillId: snap.id,
+          skillName: snap.name,
+          badge: snap.badge,
+          badgeColor: snap.badgeColor,
+          timestamp: ts.toISOString(),
+          title: deriveTitle(snap, inputSnap, html),
+          inputs: inputSnap,
+          format: 'pdf'
+        };
+        const pdfResp = await fetch(PROXY+'/generate-pdf', {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ meta, html })
+        });
+        if (!pdfResp.ok) {
+          const errJson = await pdfResp.json().catch(()=>({}));
+          throw new Error(errJson.error || `PDF conversion failed (HTTP ${pdfResp.status})`);
+        }
+        const pdfBlob = await pdfResp.blob();
+        // Trigger browser download
+        const url = URL.createObjectURL(pdfBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${id}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
+        setProgress(100, 'Complete');
+        showToast('PDF downloaded · saved to history', 'ok');
+        refreshHistory();
+        setTimeout(() => closeDrawer(), 400);
+      } catch (pdfErr) {
+        pw.classList.remove('visible');
+        btn.disabled=false; btn.textContent='GENERATE '+(activeSkill?.badge||'');
+        showToast('PDF conversion error: '+pdfErr.message);
+      }
+    } else {
+      // HTML mode: existing flow — save to history, show in modal
+      setProgress(100, 'Complete');
+      saveReport(snap, inputSnap, html, format);
+      setTimeout(()=>{ closeDrawer(); showOutput(snap, html, format); }, 400);
+    }
+  } catch(err) {
+    clearInterval(iv);
+    pw.classList.remove('visible');
+    btn.disabled=false; btn.textContent='GENERATE '+(activeSkill?.badge||'');
+    showToast('Error: '+err.message);
+  }
+}
+
+// ── Output ────────────────────────────────────────────────────
+
+function showOutput(skill, html, format) {
+  currentOutput = { skill, html, format: format || 'html' };
+  document.getElementById('outputBadge').innerHTML = badge(skill.badge, skill.badgeColor);
+  document.getElementById('outputTitle').textContent = skill.name;
+  const fmtSuffix = currentOutput.format === 'pdf' ? ' · PDF mode' : '';
+  document.getElementById('outputDate').textContent = new Date().toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'}) + fmtSuffix;
+  const iframe = document.getElementById('outputFrame');
+  const hint = document.getElementById('pdfHint');
+  iframe.srcdoc = html;
+  document.getElementById('outputModal').classList.add('open');
+  iframe.onload = null;
+  if (currentOutput.format === 'pdf') {
+    hint.classList.add('show');
+    // PDF mode: auto-open the report in a new browser tab. The new tab is
+    // a top-level page (no sandbox, no iframe restrictions), so the auto-
+    // injected window.print() fires reliably and "Save as PDF" produces a
+    // real vector PDF.
+    setTimeout(() => openCurrentInNewTab(true), 400);
+  } else {
+    hint.classList.remove('show');
+  }
+}
+
+function closeOutput(){ document.getElementById('outputModal').classList.remove('open'); }
+
+function downloadOutput(){
+  const { skill, html, format } = currentOutput;
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([html], {type:'text/html'}));
+  const stamp = new Date().toISOString().slice(0,10);
+  a.download = `${skill.id}-${stamp}${format === 'pdf' ? '-pdf-ready' : ''}.html`;
+  a.click();
+}
+
+function printOutput(){
+  // Open the report as a real top-level page in a new tab. This is far more
+  // reliable than iframe.print() (no sandbox, no modal restrictions) and the
+  // tab auto-fires the print dialog on load.
+  openCurrentInNewTab(true);
+}
+
+// CSS injected into older reports that don't have their own present-mode rules.
+// New reports (generated after the HTML_STYLE_OVERRIDE update) include their
+// own — for those we just call their togglePresent() directly.
+const PRESENT_MODE_FALLBACK_CSS = `
+  body.present-mode{font-size:18px!important;line-height:1.7!important;padding:50px 80px!important;max-width:1100px!important;margin:0 auto!important;background:#0d1014!important;color:#e8eaed!important}
+  body.present-mode h1{font-size:34px!important;line-height:1.2!important;margin-bottom:24px!important}
+  body.present-mode h2{font-size:24px!important;margin-top:48px!important;padding-top:24px!important}
+  body.present-mode h3{font-size:14px!important;margin-top:24px!important}
+  body.present-mode pre,body.present-mode code{font-size:14px!important}
+  body.present-mode table{font-size:15px!important}
+  body.present-mode .references,body.present-mode .footnotes,body.present-mode footer{font-size:13px!important;opacity:.85!important}
+  body.present-mode .sidebar-nav,body.present-mode .toc,body.present-mode aside.toc,body.present-mode .meta-strip,body.present-mode #presentBtn{display:none!important}
+`;
+
+function presentOutput(){
+  const iframe = document.getElementById('outputFrame');
+  if (!iframe || !iframe.contentDocument || !iframe.contentDocument.body) {
+    showToast('Report not ready yet');
+    return;
+  }
+  const ifWin = iframe.contentWindow;
+  const ifDoc = iframe.contentDocument;
+  // Prefer the report's own togglePresent if present (new reports generated
+  // after the style override update have one baked in).
+  if (ifWin && typeof ifWin.togglePresent === 'function') {
+    ifWin.togglePresent();
+  } else {
+    // Older report — inject the fallback CSS once and toggle the class.
+    if (!ifDoc.getElementById('al-injected-present-css')) {
+      const style = ifDoc.createElement('style');
+      style.id = 'al-injected-present-css';
+      style.textContent = PRESENT_MODE_FALLBACK_CSS;
+      ifDoc.head.appendChild(style);
+    }
+    ifDoc.body.classList.toggle('present-mode');
+  }
+  // Fullscreen the iframe itself so the report fills the screen for projection.
+  // Calling requestFullscreen on the iframe element from the parent works in
+  // all modern browsers (the iframe needs allowfullscreen, which we set).
+  if (iframe.requestFullscreen) {
+    iframe.requestFullscreen().catch(() => {
+      // Fullscreen may be blocked (e.g. nested iframe with no user gesture);
+      // present mode still works inside the modal.
+    });
+  }
+}
+
+// When the user exits fullscreen via Esc or browser UI, also drop the
+// present-mode class so the next click on PRESENT re-enters cleanly.
+document.addEventListener('fullscreenchange', () => {
+  if (document.fullscreenElement) return;
+  const iframe = document.getElementById('outputFrame');
+  if (!iframe || !iframe.contentDocument || !iframe.contentDocument.body) return;
+  iframe.contentDocument.body.classList.remove('present-mode');
+});
+
+function openCurrentInNewTab(autoPrint){
+  const { html } = currentOutput;
+  if (!html) return;
+  // Inject a one-time print-on-load shim if requested. This is appended by the
+  // launcher (not the model) so the rendered HTML stays clean if the user just
+  // wants to view it.
+  const finalHtml = autoPrint
+    ? html.replace(/<\/body>/i,
+        '<script>window.addEventListener("load",function(){setTimeout(function(){try{window.print()}catch(e){}},500)});<\/script></body>')
+    : html;
+  const blob = new Blob([finalHtml], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const win = window.open(url, '_blank', 'noopener');
+  if (!win) {
+    showToast('Pop-up blocked — allow pop-ups for this page, then click PRINT again');
+  }
+  // Revoke the blob URL after a delay so the new tab has time to load it.
+  setTimeout(() => URL.revokeObjectURL(url), 30000);
+}
+
+// ── CTI Analyst chat ──────────────────────────────────────────
+
+const CHAT_HISTORY = [];
+
+function buildSkillCatalog(){
+  return CTI_SKILLS.filter(s => !s.external).map(s => {
+    const inputDesc = (s.inputs||[]).map(i => `${i.id}${i.required?'*':''}`).join(', ');
+    return `- ${s.id} :: ${s.name} :: ${s.tagline||s.description}${inputDesc?` :: inputs[${inputDesc}]`:''}`;
+  }).join('\n');
+}
+
+function analystSystemPrompt(){
+  return `You are a CTI Support Analyst working inside the SkillCTI app. The user is a security professional (SOC analyst, IR engineer, threat hunter, CISO) who may not know which specialised skill to launch. They might ask quick factual CTI questions, or want a full structured deliverable.
+
+You have access to these specialised skills, each of which generates a self-contained HTML report when launched. Required input fields are marked with *.
+
+${buildSkillCatalog()}
+
+Decision rule:
+- For quick factual questions (CVE status, what an actor does, how to start triage, definitions, recent news, comparisons), answer directly and concisely in markdown. Use web_search when you need current information. Cite sources.
+- For requests that map cleanly to a specialised skill (full report, exec briefing, exercise, actor profile, deep IOC enrichment, threat model, sector deep-dive), give a 2-3 sentence summary of what the skill produces, then end your response with a launch directive on its own line in this exact format:
+
+LAUNCH:<skill-id>
+\`\`\`json
+{"input_field_id": "value", "another_field": "value"}
+\`\`\`
+
+The keys must match the input field IDs from the catalog above. The values should be sensible defaults you've extracted from the user's question. The user will see this rendered as a "LAUNCH" button next to the skill name.
+
+Examples:
+- "What's the latest on CVE-2025-1234?" → answer directly with web_search.
+- "Give me an exec briefing on the Snowflake breach" → recommend security-advisory with {"event": "Snowflake breach 2024", "region": "AU"}.
+- "Profile APT29 for me" → recommend threat-actor-profiling with {"input": "APT29 / Midnight Blizzard / Cozy Bear"}.
+- "Build me a tabletop for ransomware on AU healthcare" → recommend tabletop with {"input": "Ransomware targeting AU healthcare", "duration": "2 hours", "audience": "CISO + IR Team"}.
+
+Be concise and useful. Don't pad with apologies, filler, or "I'd be happy to". Default to Australian context when not specified.`;
+}
+
+function escapeHtml(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Compute a short " · 84% cached" suffix from an Anthropic usage object,
+// or "" if the response didn't include cache metrics. Cached input tokens
+// cost roughly 10% of fresh input, so the % cached is a direct rough
+// proxy for input-token cost savings.
+function formatCacheStats(usage){
+  if (!usage) return '';
+  const fresh   = usage.input_tokens || 0;
+  const written = usage.cache_creation_input_tokens || 0;
+  const read    = usage.cache_read_input_tokens || 0;
+  const total   = fresh + written + read;
+  if (total < 200) return ''; // not enough signal to display
+  const pct = Math.round((read / total) * 100);
+  if (read === 0 && written > 0) return ' · cache primed';
+  if (pct >= 5) return ` · ${pct}% cached`;
+  return '';
+}
+
+function renderMarkdown(text){
+  // Pull out code fences first so their contents don't get other replacements
+  const blocks = [];
+  let out = String(text).replace(/```(\w*)\n([\s\S]*?)\n```/g, (_, lang, code) => {
+    blocks.push(`<pre><code>${escapeHtml(code)}</code></pre>`);
+    return ` BLOCK${blocks.length - 1} `;
+  });
+  out = escapeHtml(out)
+    .replace(/`([^`\n]+)`/g, '<code>$1</code>')
+    .replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/(?<!\*)\*([^*\n]+)\*(?!\*)/g, '<em>$1</em>')
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+    .replace(/^- (.+)$/gm, '• $1')
+    .replace(/\n/g, '<br>');
+  out = out.replace(/ BLOCK(\d+) /g, (_, i) => blocks[+i]);
+  return out;
+}
+
+function parseLaunchDirective(content){
+  const m = content.match(/LAUNCH:([\w-]+)\s*```(?:json)?\s*\n([\s\S]*?)\n```/);
+  if (!m) return { clean: content, launch: null };
+  const skillId = m[1];
+  let inputs = {};
+  try { inputs = JSON.parse(m[2]); } catch { inputs = {}; }
+  const clean = (content.slice(0, m.index) + content.slice(m.index + m[0].length)).trim();
+  return { clean, launch: { skillId, inputs } };
+}
+
+function renderChatLog(){
+  const log = document.getElementById('chatLog');
+  if (!CHAT_HISTORY.length) {
+    log.innerHTML = `
+      <div class="chat-empty">
+        Ask me anything CTI — I'll answer directly or recommend the right skill to launch.
+        <div class="examples">
+          <button class="ex" onclick="quickPrompt('What CVEs have been actively exploited in the last 30 days?')">What CVEs have been actively exploited in the last 30 days?</button>
+          <button class="ex" onclick="quickPrompt('Give me an executive briefing on the most recent supply-chain compromise')">Exec briefing on the most recent supply-chain compromise</button>
+          <button class="ex" onclick="quickPrompt('Profile APT29 — TTPs, victimology, AU relevance')">Profile APT29 — TTPs, victimology, AU relevance</button>
+          <button class="ex" onclick="quickPrompt('Build a 2-hour tabletop exercise for a ransomware incident in AU healthcare')">Build a 2-hour tabletop for ransomware in AU healthcare</button>
+          <button class="ex" onclick="quickPrompt('What is EvilProxy and how do I detect it?')">What is EvilProxy and how do I detect it?</button>
+          <button class="ex" onclick="quickPrompt('Generate a sector report for the Australian energy industry')">Sector report for the AU energy industry</button>
+        </div>
+      </div>`;
+    return;
+  }
+  log.innerHTML = CHAT_HISTORY.map(m => {
+    if (m.role === 'user') {
+      return `<div class="msg user"><div class="msg-role">You</div><div class="msg-bubble">${renderMarkdown(m.content)}</div></div>`;
+    }
+    if (m.pending) {
+      return `<div class="msg assistant"><div class="msg-role">Analyst</div><div class="msg-bubble"><span class="thinking">Thinking</span></div></div>`;
+    }
+    if (m.error) {
+      return `<div class="msg assistant"><div class="msg-role">Analyst</div><div class="msg-bubble error">${escapeHtml(m.content)}</div></div>`;
+    }
+    const { clean, launch } = parseLaunchDirective(m.content);
+    let bubble = renderMarkdown(clean || '_(empty response)_');
+    if (launch) {
+      const skill = CTI_SKILLS.find(s => s.id === launch.skillId);
+      if (skill) {
+        const inputsAttr = escapeHtml(JSON.stringify(launch.inputs || {}));
+        bubble += `<div class="launch-card">
+          <div class="launch-card-label">Suggested Skill</div>
+          <div class="launch-card-skill">${escapeHtml(skill.name)} ${badge(skill.badge, skill.badgeColor)}</div>
+          <div class="launch-card-desc">${escapeHtml(skill.description)}</div>
+          <button class="launch-card-btn" onclick='launchFromChat("${skill.id}", JSON.parse(this.dataset.inputs))' data-inputs="${inputsAttr}">LAUNCH ${escapeHtml(skill.badge)} →</button>
+        </div>`;
+      } else {
+        bubble += `<div class="launch-card"><div class="launch-card-label">Unknown skill suggested</div><div class="launch-card-desc">${escapeHtml(launch.skillId)}</div></div>`;
+      }
+    }
+    return `<div class="msg assistant"><div class="msg-role">Analyst</div><div class="msg-bubble">${bubble}</div></div>`;
+  }).join('');
+  scrollChatToBottom();
+}
+
+function scrollChatToBottom(){
+  const log = document.getElementById('chatLog');
+  log.scrollTop = log.scrollHeight;
+}
+
+function quickPrompt(text){
+  document.getElementById('chatInput').value = text;
+  sendChat();
+}
+
+async function sendChat(){
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if (!text) return;
+  const dot = document.getElementById('proxyDot');
+  if (!dot.classList.contains('ok')) { showToast('Proxy is offline — run: python proxy.py'); return; }
+
+  CHAT_HISTORY.push({ role:'user', content:text });
+  input.value = '';
+  input.style.height = '46px';
+  const placeholderIdx = CHAT_HISTORY.length;
+  CHAT_HISTORY.push({ role:'assistant', content:'', pending:true });
+  renderChatLog();
+
+  const sendBtn = document.getElementById('chatSend');
+  sendBtn.disabled = true;
+
+  try {
+    const resp = await fetch(PROXY+'/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:4000,
+        // Cache the analyst system prompt — it's identical across every
+        // chat turn (the skill catalogue rarely changes) so 2nd-and-later
+        // turns in a 5-minute session land cached at ~10% input price.
+        system: [
+          { type:'text', text: analystSystemPrompt(), cache_control: { type:'ephemeral' } }
+        ],
+        messages: CHAT_HISTORY.filter(m => !m.pending).map(m => ({role:m.role, content:m.content})),
+        tools: [{type:'web_search_20250305', name:'web_search'}]
+      })
+    });
+    if (!resp.ok) {
+      const e = await resp.json().catch(()=>({}));
+      throw new Error(e.error?.message || `API error ${resp.status}`);
+    }
+    const data = await resp.json();
+    let reply = '';
+    for (const b of (data.content||[])) { if (b.type === 'text') reply += b.text; }
+    CHAT_HISTORY[placeholderIdx] = { role:'assistant', content: reply.trim() || '_(no response)_' };
+  } catch(err) {
+    CHAT_HISTORY[placeholderIdx] = { role:'assistant', content: 'Error: '+err.message, error:true };
+  }
+
+  sendBtn.disabled = false;
+  renderChatLog();
+}
+
+function launchFromChat(skillId, inputs){
+  // Switch to the right tab so the drawer opens over the matching grid
+  openDrawer(skillId);
+  setTimeout(() => {
+    for (const [k, v] of Object.entries(inputs || {})) {
+      const el = document.getElementById('inp_'+k);
+      if (el) el.value = v;
+    }
+  }, 60);
+}
+
+// ── Toast ─────────────────────────────────────────────────────
+
+function showToast(msg, kind){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.classList.toggle('ok', kind==='ok');
+  t.classList.add('show');
+  setTimeout(()=>{ t.classList.remove('show'); t.classList.remove('ok'); }, 4500);
+}
+
+// ── History — save / list / open / delete ─────────────────────
+
+function deriveTitle(skill, values, html){
+  const trim = s => s.length > 80 ? s.slice(0,77) + '…' : s;
+
+  // 1. Try the generated HTML's <title> tag — model usually writes
+  //    a meaningful one like "Security Advisory: CVE-2024-12345"
+  if (html) {
+    const t = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+    if (t && t[1]) {
+      const cleaned = t[1].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+      if (cleaned && cleaned.length >= 4 && cleaned.toLowerCase() !== 'document') {
+        return trim(cleaned);
+      }
+    }
+    // 2. Fall back to the first <h1>
+    const h1 = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
+    if (h1 && h1[1]) {
+      const cleaned = h1[1].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+      if (cleaned && cleaned.length >= 4) return trim(cleaned);
+    }
+  }
+
+  // 3. Fall back to the first meaningful input field, but prettify URLs
+  const fieldOrder = ['event','input','iocs','sector','focus','region','month'];
+  for (const k of fieldOrder) {
+    const v = values[k];
+    if (!v) continue;
+    let first = v.split('\n')[0].trim();
+    if (!first) continue;
+    // URL → "vendor.com/last-path-segment" instead of full noisy URL
+    if (/^https?:\/\//i.test(first)) {
+      try {
+        const u = new URL(first);
+        const host = u.hostname.replace(/^www\./, '');
+        const tail = u.pathname.split('/').filter(Boolean).slice(-1)[0] || '';
+        first = tail ? `${host}/${tail}` : host;
+      } catch {}
+    }
+    return `${skill.name}: ${trim(first)}`;
+  }
+
+  // 4. Last resort — skill name + date
+  return `${skill.name} · ${new Date().toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'})}`;
+}
+
+async function saveReport(skill, values, html, format){
+  const ts = new Date();
+  const stamp = ts.toISOString().replace(/[:.]/g,'-').slice(0,19);
+  const fmt = format || 'html';
+  const id = `${stamp}-${skill.id}${fmt === 'pdf' ? '-pdf' : ''}`;
+  const meta = {
+    id,
+    skillId: skill.id,
+    skillName: skill.name,
+    badge: skill.badge,
+    badgeColor: skill.badgeColor,
+    timestamp: ts.toISOString(),
+    title: deriveTitle(skill, values, html),
+    inputs: values,
+    format: fmt,
+    bytes: new Blob([html]).size
+  };
+  try {
+    const resp = await fetch(PROXY+'/reports', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({meta, html})
+    });
+    if (!resp.ok) throw new Error('save failed');
+    showToast('Saved to ./reports/', 'ok');
+    refreshHistory();
+  } catch(e) {
+    showToast('Could not save report — proxy may be offline');
+  }
+}
+
+async function refreshHistory(){
+  try {
+    const resp = await fetch(PROXY+'/reports', {signal:AbortSignal.timeout(3000)});
+    if (!resp.ok) throw new Error();
+    const data = await resp.json();
+    renderHistory(data.reports || []);
+  } catch {
+    renderHistory([]);
+  }
+}
+
+// Full set of reports fetched from the proxy. Filter / sort operate on this
+// in memory so we don't re-hit the proxy every time the user changes a control.
+let _historyAll = [];
+
+function reportCategory(report){
+  const skillId = report.skillId || '';
+  if (skillId === 'imported') return 'imported';
+  if (skillId.startsWith('daily-')) return 'daily';
+  if (/^(operational|tactical|strategic)-(au|global)$/.test(skillId)) return 'monthly';
+  if (/^sector-/.test(skillId)) return 'sector';
+  // Strategy tab — explicit ID list since these moved out of On-Demand / DFIR
+  if (['mythos-ready','threat-model','tabletop'].includes(skillId)) return 'strategy';
+  const skill = (typeof CTI_SKILLS !== 'undefined') ? CTI_SKILLS.find(s => s.id === skillId) : null;
+  if (skill) {
+    if (skill.category === 'strategy') return 'strategy';
+    if (skill.category === 'ondemand') return 'ondemand';
+    if (skill.category === 'dfir') return 'dfir';
+    if (skill.category === 'reports') return 'monthly'; // catch-all reports
+  }
+  return 'other';
+}
+
+function renderHistory(reports){
+  _historyAll = Array.isArray(reports) ? reports : [];
+  const hc = document.getElementById('historyCount');
+  if (hc) hc.textContent = _historyAll.length;
+  document.getElementById('historyTabCount').textContent = '('+_historyAll.length+')';
+  applyHistoryFilters();
+  // Keep the dashboard's Recent Reports widget in sync whenever the
+  // history list refreshes (post-save, manual refresh, palette action).
+  if (typeof renderRecentReportsWidget === 'function') renderRecentReportsWidget();
+}
+
+function applyHistoryFilters(){
+  const empty = document.getElementById('historyEmpty');
+  const noMatch = document.getElementById('historyNoMatch');
+  const controls = document.getElementById('historyControls');
+  const grid = document.getElementById('grid-history');
+  const countEl = document.getElementById('filteredCount');
+
+  if (!_historyAll.length) {
+    empty.style.display = 'block';
+    noMatch.style.display = 'none';
+    controls.style.display = 'none';
+    grid.innerHTML = '';
+    if (countEl) countEl.textContent = '';
+    return;
+  }
+  empty.style.display = 'none';
+  controls.style.display = 'flex';
+
+  const q = (document.getElementById('historySearch').value || '').trim().toLowerCase();
+  const cat = document.getElementById('historyCategory').value;
+  const fmt = document.getElementById('historyFormat').value;
+  const sortBy = document.getElementById('historySort').value;
+
+  let filtered = _historyAll.slice();
+  if (q) {
+    filtered = filtered.filter(r => {
+      const blob = [(r.title||''), (r.skillName||''), (r.badge||''), (r.skillId||'')]
+        .join(' ').toLowerCase();
+      return blob.includes(q);
+    });
+  }
+  if (cat !== 'all') {
+    filtered = filtered.filter(r => reportCategory(r) === cat);
+  }
+  if (fmt !== 'all') {
+    filtered = filtered.filter(r => {
+      const f = (r.format || 'html').toLowerCase();
+      return f === fmt;
+    });
+  }
+
+  filtered.sort((a, b) => {
+    const at = a.timestamp || '';
+    const bt = b.timestamp || '';
+    const aTitle = (a.title || a.skillName || '').toLowerCase();
+    const bTitle = (b.title || b.skillName || '').toLowerCase();
+    const aSize = a.bytes || 0;
+    const bSize = b.bytes || 0;
+    switch (sortBy) {
+      case 'oldest':     return at.localeCompare(bt);
+      case 'title-asc':  return aTitle.localeCompare(bTitle);
+      case 'title-desc': return bTitle.localeCompare(aTitle);
+      case 'size-desc':  return bSize - aSize;
+      case 'size-asc':   return aSize - bSize;
+      case 'newest':
+      default:           return bt.localeCompare(at);
+    }
+  });
+
+  if (countEl) {
+    countEl.textContent = filtered.length === _historyAll.length
+      ? `${_historyAll.length} REPORTS`
+      : `${filtered.length} of ${_historyAll.length} REPORTS`;
+  }
+
+  if (!filtered.length) {
+    noMatch.style.display = 'block';
+    grid.innerHTML = '';
+    return;
+  }
+  noMatch.style.display = 'none';
+
+  grid.innerHTML = filtered.map(r => {
+    const dt = new Date(r.timestamp);
+    const dateStr = dt.toLocaleString('en-AU',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    const kb = (r.bytes||0) >= 1024 ? Math.round((r.bytes||0)/1024)+' KB' : (r.bytes||0)+' B';
+    const safeTitle = (r.title||r.skillName||'Report').replace(/</g,'&lt;');
+    const fmtBadge =
+      r.format === 'pdf'  ? badge('PDF',  '#0f3a8a') :
+      r.format === 'pptx' ? badge('PPTX', '#6d28d9') : '';
+    const openLabel = r.format === 'pptx' ? 'DOWNLOAD' : 'OPEN';
+    return `
+      <div class="card">
+        <div class="card-glow" style="background:linear-gradient(90deg,${r.badgeColor||'#a855f7'}55,transparent)"></div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">${badge(r.badge||'REPORT', r.badgeColor||'#a855f7')}${fmtBadge}</div>
+        <div>
+          <div class="card-name">${safeTitle}</div>
+          <div class="card-tagline">${r.skillName||''}</div>
+        </div>
+        <div class="history-meta">
+          <span>${dateStr}</span>
+          <span>${kb}</span>
+        </div>
+        <div class="history-actions">
+          <button class="hist-btn primary" onclick="openHistory('${r.id}')">${openLabel}</button>
+          <button class="hist-btn danger" onclick="deleteHistory('${r.id}', event)">DELETE</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+async function openHistory(id){
+  try {
+    const resp = await fetch(PROXY+'/reports/'+encodeURIComponent(id));
+    if (!resp.ok) throw new Error('not found');
+    const data = await resp.json();
+    const meta = data.meta || {};
+    if (meta.format === 'pdf') {
+      // PDFs are binary — open via the proxy in a new tab where the browser's
+      // native PDF viewer renders them.
+      window.open(PROXY+'/reports/'+encodeURIComponent(id)+'/pdf', '_blank', 'noopener');
+      return;
+    }
+    if (meta.format === 'pptx') {
+      // PowerPoint can't render in the browser — trigger a download via the
+      // proxy's /reports/<id>/pptx route. PowerPoint / Keynote opens it.
+      window.open(PROXY+'/reports/'+encodeURIComponent(id)+'/pptx', '_blank', 'noopener');
+      return;
+    }
+    const fakeSkill = {
+      id: meta.skillId || id,
+      name: meta.skillName || 'Report',
+      badge: meta.badge || 'REPORT',
+      badgeColor: meta.badgeColor || '#a855f7'
+    };
+    showOutput(fakeSkill, data.html || '', meta.format || 'html');
+  } catch {
+    showToast('Could not open report');
+  }
+}
+
+async function deleteHistory(id, ev){
+  if (ev) ev.stopPropagation();
+  if (!confirm('Delete this saved report? This cannot be undone.')) return;
+  try {
+    const resp = await fetch(PROXY+'/reports/'+encodeURIComponent(id), {method:'DELETE'});
+    if (!resp.ok) throw new Error();
+    refreshHistory();
+  } catch {
+    showToast('Could not delete report');
+  }
+}
+
+// ── Theme toggle ──────────────────────────────────────────────
+
+function applyTheme(theme){
+  const root = document.documentElement;
+  if (theme === 'light') root.setAttribute('data-theme', 'light');
+  else root.removeAttribute('data-theme');
+  const lbl = document.getElementById('themeLabel');
+  const icon = document.getElementById('themeIcon');
+  if (lbl) lbl.textContent = theme === 'light' ? 'LIGHT' : 'DARK';
+  if (icon) {
+    // moon for "currently dark" (click to go light), sun for "currently light"
+    icon.innerHTML = theme === 'light'
+      ? '<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2m10-10h-2M4 12H2m15.07-7.07l-1.41 1.41M6.34 17.66l-1.41 1.41m12.73 0l-1.41-1.41M6.34 6.34L4.93 4.93"/>'
+      : '<path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>';
+  }
+}
+
+function toggleTheme(){
+  const current = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+  const next = current === 'light' ? 'dark' : 'light';
+  applyTheme(next);
+  try { localStorage.setItem('skillcti-theme', next); } catch {}
+}
+
+(function initTheme(){
+  let saved = 'dark';
+  try { saved = localStorage.getItem('skillcti-theme') || 'dark'; } catch {}
+  applyTheme(saved);
+})();
+
+// ── Cmd+K command palette ─────────────────────────────────────
+
+let cmdkItems = [];
+let cmdkSelected = 0;
+
+function openCmdk(){
+  buildCmdkIndex();
+  document.getElementById('cmdkOverlay').classList.add('open');
+  document.getElementById('cmdk').classList.add('open');
+  const input = document.getElementById('cmdkInput');
+  input.value = '';
+  cmdkSelected = 0;
+  renderCmdk('');
+  setTimeout(() => input.focus(), 30);
+}
+
+function closeCmdk(){
+  document.getElementById('cmdkOverlay').classList.remove('open');
+  document.getElementById('cmdk').classList.remove('open');
+}
+
+function buildCmdkIndex(){
+  cmdkItems = [];
+  const tabSpecs = [
+    {name:'Home — dashboard', tab:'home'},
+    {name:'CTI Analyst — chat', tab:'analyst'},
+    {name:'CTI Reports', tab:'reports'},
+    {name:'On-Demand CTI', tab:'ondemand'},
+    {name:'DFIR Activities', tab:'dfir'},
+    {name:'Strategy', tab:'strategy'},
+    {name:'History', tab:'history'}
+  ];
+  for (const t of tabSpecs) {
+    cmdkItems.push({
+      kind:'TAB', label:t.name, meta:'Switch to ' + t.name + ' tab',
+      action: () => { closeCmdk(); switchToTabByName(t.tab); }
+    });
+  }
+  for (const s of CTI_SKILLS) {
+    cmdkItems.push({
+      kind: s.external ? 'OPEN' : 'SKILL',
+      label: s.name,
+      meta: s.tagline || s.description || '',
+      action: () => {
+        closeCmdk();
+        if (s.external) openExternal(s.url);
+        else openDrawer(s.id);
+      }
+    });
+  }
+  cmdkItems.push({
+    kind:'ACTION', label:'Toggle light / dark theme', meta:'',
+    action: () => { closeCmdk(); toggleTheme(); }
+  });
+  cmdkItems.push({
+    kind:'ACTION', label:'Refresh history', meta:'',
+    action: () => { closeCmdk(); refreshHistory(); }
+  });
+  // Async — pull saved reports
+  fetch(PROXY+'/reports', {signal:AbortSignal.timeout(2500)})
+    .then(r => r.ok ? r.json() : {reports:[]})
+    .then(data => {
+      for (const r of (data.reports || [])) {
+        cmdkItems.push({
+          kind:'REPORT',
+          label: r.title || r.skillName || 'Report',
+          meta: new Date(r.timestamp).toLocaleDateString('en-AU') + ' · ' + (r.skillName || ''),
+          action: () => { closeCmdk(); openHistory(r.id); }
+        });
+      }
+      const cur = document.getElementById('cmdkInput');
+      if (cur && document.getElementById('cmdk').classList.contains('open')) {
+        renderCmdk(cur.value || '');
+      }
+    })
+    .catch(() => {});
+}
+
+function switchToTabByName(tab){
+  const btn = document.querySelector(`.tab[onclick*="switchTab('${tab}'"]`);
+  if (btn) btn.click();
+}
+
+function fuzzyScore(text, query){
+  if (!query) return 1;
+  const t = String(text).toLowerCase();
+  const q = query.toLowerCase().trim();
+  if (!q) return 1;
+  if (t === q) return 1000;
+  if (t.startsWith(q)) return 500;
+  if (t.includes(q)) return 200;
+  // Token match — every token must appear somewhere
+  const tokens = q.split(/\s+/).filter(Boolean);
+  let score = 0;
+  for (const tok of tokens) {
+    if (!t.includes(tok)) return 0;
+    score += 10;
+  }
+  return score;
+}
+
+function renderCmdk(query){
+  const list = document.getElementById('cmdkList');
+  const filtered = cmdkItems
+    .map(item => ({...item, _score: fuzzyScore(item.label + ' ' + (item.meta||'') + ' ' + item.kind, query)}))
+    .filter(item => item._score > 0)
+    .sort((a, b) => b._score - a._score)
+    .slice(0, 40);
+  if (cmdkSelected >= filtered.length) cmdkSelected = 0;
+  if (cmdkSelected < 0) cmdkSelected = 0;
+  if (filtered.length === 0) {
+    list.innerHTML = '<div class="cmdk-empty">No matches for &ldquo;'+escapeHtml(query)+'&rdquo;</div>';
+    return;
+  }
+  list.innerHTML = filtered.map((item, i) => `
+    <div class="cmdk-item ${i === cmdkSelected ? 'selected' : ''}" data-idx="${i}">
+      <span class="cmdk-item-badge">${escapeHtml(item.kind)}</span>
+      <span class="cmdk-item-label">${escapeHtml(item.label)}</span>
+      ${item.meta ? `<span class="cmdk-item-meta">${escapeHtml(item.meta)}</span>` : ''}
+    </div>
+  `).join('');
+  list.querySelectorAll('.cmdk-item').forEach((el, i) => {
+    el.onclick = () => { filtered[i].action(); };
+    el.onmouseenter = () => { cmdkSelected = i; renderCmdk(query); };
+  });
+  const sel = list.querySelector('.cmdk-item.selected');
+  if (sel) sel.scrollIntoView({block:'nearest'});
+}
+
+// Global keyboard listener for Cmd/Ctrl+K + palette navigation
+window.addEventListener('keydown', e => {
+  const isOpen = document.getElementById('cmdk').classList.contains('open');
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+    e.preventDefault();
+    if (isOpen) closeCmdk(); else openCmdk();
+    return;
+  }
+  if (!isOpen) return;
+  if (e.key === 'Escape') { e.preventDefault(); closeCmdk(); return; }
+  const list = document.getElementById('cmdkList');
+  const visible = list.querySelectorAll('.cmdk-item');
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    cmdkSelected = Math.min(visible.length - 1, cmdkSelected + 1);
+    renderCmdk(document.getElementById('cmdkInput').value || '');
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    cmdkSelected = Math.max(0, cmdkSelected - 1);
+    renderCmdk(document.getElementById('cmdkInput').value || '');
+  } else if (e.key === 'Enter') {
+    e.preventDefault();
+    const sel = list.querySelector('.cmdk-item.selected');
+    if (sel) sel.click();
+  }
+});
+
+// ── Home dashboard widgets ────────────────────────────────────
+
+function fmtRelativeTime(iso){
+  const ts = new Date(iso).getTime();
+  if (isNaN(ts)) return '';
+  const diffMs = Date.now() - ts;
+  const min = Math.floor(diffMs / 60000);
+  if (min < 1) return 'just now';
+  if (min < 60) return min + 'm ago';
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return hr + 'h ago';
+  const days = Math.floor(hr / 24);
+  if (days < 7) return days + 'd ago';
+  return new Date(iso).toLocaleDateString('en-AU', {day:'numeric', month:'short'});
+}
+
+function escapeAttr(s){ return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+
+// ── Widget 1: Recent Reports ──────────────────────────────────
+
+function renderRecentReportsWidget(){
+  const el = document.getElementById('dashRecent');
+  if (!el) return;
+  const recent = (_historyAll || []).slice(0, 8);
+  if (!recent.length) {
+    el.innerHTML = '<div class="widget-empty">No reports yet.<br><span style="font-size:10px">Generate one from any CTI skill — it appears here.</span></div>';
+    return;
+  }
+  el.innerHTML = recent.map(r => `
+    <button class="recent-item" onclick="openHistory('${escapeAttr(r.id)}')">
+      ${badge(r.badge||'REPORT', r.badgeColor||'#a855f7')}
+      <span class="recent-title">${escapeHtml(r.title || r.skillName || 'Report')}</span>
+      <span class="recent-meta">${fmtRelativeTime(r.timestamp)}</span>
+    </button>
+  `).join('');
+}
+
+// ── Widget 2: Daily Cyber News (cached daily) ─────────────────
+
+const DASH_NEWS_PROMPT = `Use web_search to find the top 4 most significant cybersecurity news stories from the last 24-48 hours globally. Prefer: BleepingComputer, The Record, Krebs on Security, Reuters cyber, Bloomberg cyber, CISA, NCSC, ACSC, Mandiant, CrowdStrike, Microsoft Threat Intelligence, ransomware leak-site trackers.
+
+Return ONLY a valid JSON array — no preamble, no markdown fences — in this shape:
+[
+  {"headline": "Short headline, under 12 words", "summary": "One sentence, under 25 words.", "source": "Publisher Name", "url": "https://full-direct-article-url"},
+  ...
+]
+
+ABSOLUTELY MANDATORY for every item:
+- "url" MUST be a complete, working https:// link to the SPECIFIC ARTICLE PAGE itself — never a homepage, never a category page, never a search results page. The reader will click it to read the full story.
+- Verify the URL appears literally in the web_search results you saw — do NOT paraphrase, shorten, or reconstruct URLs from memory.
+- If a story has no verifiable direct article URL, OMIT THE STORY ENTIRELY. Return 3 well-cited stories instead of 4 with one bad URL.
+- "source" should be the publisher's display name (e.g. "BleepingComputer", "The Record", "Reuters") — not the URL.
+
+Headlines must reference events from the last 24-48 hours. Skip undated stories, evergreen explainers, opinion pieces, and product launches without a security angle.`;
+
+// Returns true if u is a https:// link to a specific article page (not a
+// homepage / category / search). Used to drop news items the model didn't
+// give a real article URL for.
+function isValidArticleUrl(u){
+  if (!u || typeof u !== 'string') return false;
+  if (!/^https:\/\//i.test(u)) return false;
+  try {
+    const parsed = new URL(u);
+    const path = parsed.pathname.replace(/\/+$/, '');
+    // Reject bare hosts, single-segment category pages, and very short paths.
+    if (!path || path === '' || path === '/') return false;
+    const segs = path.split('/').filter(Boolean);
+    if (segs.length < 1) return false;
+    // Reject obvious search/category routes
+    if (/^(search|category|tag|archive|index)$/i.test(segs[0]) && segs.length === 1) return false;
+    return path.length >= 8;
+  } catch { return false; }
+}
+
+async function refreshDashNews(force){
+  const el = document.getElementById('dashNews');
+  const dateEl = document.getElementById('dashNewsDate');
+  // v2 cache key — invalidates any old cached responses that had bad URLs.
+  const todayKey = 'dash-news-v2-' + new Date().toISOString().slice(0,10);
+  if (!force) {
+    const cached = localStorage.getItem(todayKey);
+    if (cached) {
+      try { renderDashNews(JSON.parse(cached)); if (dateEl) dateEl.textContent = 'cached for today'; return; }
+      catch {}
+    }
+  }
+  el.innerHTML = '<div class="widget-empty">Fetching today\'s headlines…<br><span style="font-size:10px">~10s · 1 API call (then cached)</span></div>';
+  try {
+    const dot = document.getElementById('proxyDot');
+    if (!dot.classList.contains('ok')) throw new Error('proxy offline');
+    const resp = await fetch(PROXY+'/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens: 1200,
+        messages: [{role:'user', content: DASH_NEWS_PROMPT}],
+        tools: [{type:'web_search_20250305', name:'web_search'}]
+      })
+    });
+    if (!resp.ok) throw new Error('news fetch HTTP ' + resp.status);
+    const data = await resp.json();
+    let text = '';
+    for (const b of (data.content||[])) { if (b.type === 'text') text += b.text; }
+    text = text.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim();
+    // Greedy extract first JSON array
+    const m = text.match(/\[[\s\S]*\]/);
+    if (!m) throw new Error('no JSON array in response');
+    const rawItems = JSON.parse(m[0]);
+    if (!Array.isArray(rawItems) || !rawItems.length) throw new Error('empty news array');
+    // Drop any item without a real article URL — the headline MUST be clickable.
+    const items = rawItems.filter(it => it && isValidArticleUrl(it.url) && it.headline);
+    if (!items.length) throw new Error('no items with valid article URLs');
+    localStorage.setItem(todayKey, JSON.stringify(items));
+    renderDashNews(items);
+    if (dateEl) dateEl.textContent = 'today';
+    // Clean up old cache keys (any version)
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith('dash-news-') && k !== todayKey) localStorage.removeItem(k);
+    }
+  } catch (err) {
+    el.innerHTML = `<div class="widget-error">Could not load news: ${escapeHtml(err.message)}<br><button class="quickask-send" style="margin-top:10px" onclick="refreshDashNews(true)">RETRY</button></div>`;
+  }
+}
+
+function renderDashNews(items){
+  const el = document.getElementById('dashNews');
+  if (!el) return;
+  // Belt-and-braces: filter again at render time in case cached data has stale entries
+  const valid = (items || []).filter(it => it && isValidArticleUrl(it.url) && it.headline).slice(0, 4);
+  if (!valid.length) {
+    el.innerHTML = '<div class="widget-empty">No stories with verifiable article URLs.<br><span style="font-size:10px">Click ↻ Refresh to try again.</span></div>';
+    return;
+  }
+  el.innerHTML = valid.map(it => `
+    <div class="news-item">
+      <a class="news-headline" href="${escapeAttr(it.url)}" target="_blank" rel="noopener" title="${escapeAttr(it.url)}">${escapeHtml(it.headline)} <span class="news-ext">↗</span></a>
+      <span class="news-summary">${escapeHtml(it.summary||'')}</span>
+      <span class="news-source">${escapeHtml(it.source||'')}</span>
+    </div>
+  `).join('');
+}
+
+// ── Widget 3: AU Ransomware Victims (cached 6h) ───────────────
+
+async function refreshDashRansom(force){
+  const el = document.getElementById('dashRansom');
+  const cacheKey = 'dash-ransom-au';
+  const stamp = Date.now();
+  if (!force) {
+    try {
+      const cached = JSON.parse(localStorage.getItem(cacheKey) || 'null');
+      if (cached && (stamp - cached.t) < 6 * 60 * 60 * 1000) {
+        renderDashRansom(cached.victims);
+        return;
+      }
+    } catch {}
+  }
+  el.innerHTML = '<div class="widget-empty">Loading AU ransomware victims…</div>';
+  try {
+    const resp = await fetch(PROXY+'/ransomware-au', {signal: AbortSignal.timeout(12000)});
+    if (!resp.ok) throw new Error('proxy returned ' + resp.status);
+    const data = await resp.json();
+    const victims = data.victims || [];
+    localStorage.setItem(cacheKey, JSON.stringify({t: stamp, victims}));
+    renderDashRansom(victims);
+  } catch (err) {
+    // Friendly placeholder while the ransomware.live API endpoint config is
+    // being worked out. Once proxy.py's /ransomware-au passthrough is pointing
+    // at a working URL, this widget auto-populates on the next refresh.
+    el.innerHTML = `<div class="widget-empty" style="text-align:left;padding:16px 8px">
+      <div style="font-style:normal;color:var(--text2);font-size:11px;margin-bottom:8px">
+        <strong style="color:var(--text)">Pending API setup</strong>
+      </div>
+      <div style="font-size:10px;line-height:1.6;color:var(--text3)">
+        Once the <code style="font-family:var(--mono);font-size:10px;color:var(--text2)">/ransomware-au</code> endpoint in proxy.py is pointing at a working ransomware.live URL, this widget will auto-populate with the last 3–5 named AU victims.
+        <br><br>
+        <button class="widget-action" style="color:var(--purple);padding:0" onclick="refreshDashRansom(true)">↻ Try again</button>
+      </div>
+    </div>`;
+  }
+}
+
+function renderDashRansom(victims){
+  const el = document.getElementById('dashRansom');
+  if (!el) return;
+  if (!victims || !victims.length) {
+    el.innerHTML = '<div class="widget-empty">No recent AU victims listed.<br><span style="font-size:10px">Source: ransomware.live</span></div>';
+    return;
+  }
+  // Normalise field names defensively — different API shapes use different keys
+  const pick = (o, keys) => { for (const k of keys) if (o[k]) return o[k]; return null; };
+  const norm = victims.map(v => ({
+    victim: pick(v, ['victim','post_title','name','organization','organisation']) || 'Unknown',
+    group: pick(v, ['group_name','group','attacker','gang']) || 'unknown',
+    date: pick(v, ['discovered','attackdate','attack_date','published','date','created']) || '',
+    activity: pick(v, ['activity','sector','industry']) || '',
+    url: pick(v, ['post_url','url','website']) || ''
+  })).sort((a,b) => String(b.date).localeCompare(String(a.date))).slice(0, 5);
+  el.innerHTML = norm.map(v => {
+    const dateStr = v.date ? fmtRelativeTime(v.date) : '';
+    const linkOpen = v.url ? `<a href="${escapeAttr(v.url)}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none">` : '';
+    const linkClose = v.url ? '</a>' : '';
+    return `
+      <div class="rw-item">
+        ${linkOpen}<span class="rw-victim">${escapeHtml(v.victim)}</span>${linkClose}
+        <span class="rw-group">${escapeHtml(v.group)}</span>
+        <div class="rw-meta">
+          ${v.activity ? `<span>${escapeHtml(v.activity)}</span>` : ''}
+          ${dateStr ? `<span>${escapeHtml(dateStr)}</span>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ── Widget 4: Quick Ask Analyst ───────────────────────────────
+
+function dashQuickAskSubmit(){
+  const ta = document.getElementById('dashQuickAsk');
+  const text = (ta.value || '').trim();
+  if (!text) return;
+  // Switch to analyst tab, set chat input, send
+  const btn = document.querySelector('.tab[onclick*="switchTab(\'analyst\'"]');
+  if (btn) btn.click();
+  const ci = document.getElementById('chatInput');
+  if (ci) {
+    ci.value = text;
+    sendChat();
+  }
+  ta.value = '';
+}
+
+// Submit on Enter (Shift+Enter = newline)
+document.getElementById('dashQuickAsk')?.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    dashQuickAskSubmit();
+  }
+});
+
+// ── Init ──────────────────────────────────────────────────────
+
+// Auto-derive every count from the skill arrays so adding a new skill is a
+// one-place change (just push it into the right array in skills.js).
+const TAB_COUNTS = {
+  reports: DAILY_BRIEFS.length + MONTHLY_AU.length + MONTHLY_GLOBAL.length + SECTOR_REPORTS.length,
+  ondemand: ONDEMAND_SKILLS.length,
+  dfir: DFIR_SKILLS.length,
+  strategy: STRATEGY_SKILLS.length,
+};
+for (const [tab, count] of Object.entries(TAB_COUNTS)) {
+  const el = document.querySelector(`[data-tab-count="${tab}"]`);
+  if (el) el.textContent = `(${count})`;
+}
+// Header sidebar total — counts launchable skills only (Reports + On-Demand + DFIR + Strategy).
+const TOTAL_LAUNCHABLE = TAB_COUNTS.reports + TAB_COUNTS.ondemand + TAB_COUNTS.dfir + TAB_COUNTS.strategy;
+const totalEl = document.getElementById('totalSkillCount');
+if (totalEl) totalEl.textContent = TOTAL_LAUNCHABLE;
+
+renderGrid(DAILY_BRIEFS,'grid-daily',false);
+renderGrid(MONTHLY_AU,'grid-monthly-au',false);
+renderGrid(MONTHLY_GLOBAL,'grid-monthly-global',false);
+renderGrid(SECTOR_REPORTS,'grid-sector',false);
+renderGrid(ONDEMAND_SKILLS,'grid-ondemand',false);
+renderGrid(DFIR_SKILLS,'grid-dfir',false);
+renderGrid(STRATEGY_SKILLS,'grid-strategy',false);
+renderChatLog();
+
+const chatInputEl = document.getElementById('chatInput');
+chatInputEl.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
+});
+chatInputEl.addEventListener('input', e => {
+  e.target.style.height = '46px';
+  e.target.style.height = Math.min(160, e.target.scrollHeight) + 'px';
+});
+
+const cmdkInputEl = document.getElementById('cmdkInput');
+cmdkInputEl.addEventListener('input', e => {
+  cmdkSelected = 0;
+  renderCmdk(e.target.value || '');
+});
+
+// History tab — filter + sort controls
+['historySearch','historyCategory','historyFormat','historySort'].forEach(id => {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const evt = el.tagName === 'SELECT' ? 'change' : 'input';
+  el.addEventListener(evt, applyHistoryFilters);
+});
+
+checkProxy();
+setInterval(checkProxy,15000);
+refreshHistory();
+
+// Dashboard widgets — fire on init. News + ransomware are cached, so
+// repeated page loads don't hammer the APIs.
+renderRecentReportsWidget();
+refreshDashNews(false);   // uses today's cache if available
+refreshDashRansom(false); // uses 6-hour cache if fresh
+</script>
+</body>
+</html>
