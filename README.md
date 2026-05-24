@@ -31,7 +31,7 @@ You can also drop individual skills in if you only want a subset.
 Invoke any skill by typing `/<skill-name>` followed by the argument it expects. Most accept a URL, a file path, or pasted content.
 
 ```
-/threat-actor-profiling https://example.com/scattered-spider-report
+/threat-actor-profile https://example.com/scattered-spider-report
 /cti-monthly-report-strategic-australia 2026-04
 /cti-daily-brief-global
 /cti-stix-export https://www.mandiant.com/resources/blog/apt29-wineloader
@@ -276,12 +276,12 @@ Short, decision-oriented executive briefing for a single newsworthy event — a 
 /cti-security-advisory <URL, CVE ID, or event name> [country|region]
 ```
 
-### `threat-actor-profiling`
+### `threat-actor-profile`
 
 Structured threat actor profile from a URL or attached document. BLUF, actor metadata, Diamond Model overlay, MITRE ATT&CK TTPs, IOCs, targeted sectors and geographies, SOCI Act relevance, recommended detections.
 
 ```
-/threat-actor-profiling <URL or filename>
+/threat-actor-profile <URL or filename>
 ```
 
 ### `cti-ioc-enrich` — in development
@@ -415,7 +415,7 @@ Facilitator-ready IR Tabletop Exercise from a threat intel input. Six phased inj
 | CTI Reports | AU sector deep-dive | `/cti-sector-report-australia` |
 | CTI Reports | Global sector deep-dive | `/cti-sector-report-global` |
 | On-Demand CTI | Security Advisory | `/cti-security-advisory` |
-| On-Demand CTI | Threat Actor Profile | `/threat-actor-profiling` |
+| On-Demand CTI | Threat Actor Profile | `/threat-actor-profile` |
 | On-Demand CTI | Admiralty Assessment | `/cti-admiralty-assessment` |
 | On-Demand CTI | STIX Bundle Export | `/cti-stix-export` |
 | On-Demand CTI | ATT&CK Navigator Layer | `/cti-attack-navigator` |
@@ -456,7 +456,7 @@ skills/
 ├── cti-sector-report-australia/
 ├── cti-sector-report-global/
 ├── cti-security-advisory/
-├── threat-actor-profiling/
+├── threat-actor-profile/
 ├── cti-admiralty-assessment/
 ├── cti-stix-export/
 ├── cti-attack-navigator/

@@ -11,6 +11,33 @@ Everything below is universal and must not be overridden in individual SKILL.md 
 
 ---
 
+## Output style: avoid AI-tell punctuation (mandatory)
+
+Do NOT use em dashes (the long dash character, Unicode U+2014) or en dashes (the medium dash character, U+2013) anywhere in the report output. Em dashes have become a strong signal that text is AI-generated. Their absence makes the report look more human-written.
+
+Substitute one of these instead:
+
+- A period, then start a new sentence.
+- A comma, for short parenthetical phrases.
+- Parentheses, for true asides.
+- A colon, for elaboration that follows.
+- A semicolon, for two linked independent clauses.
+
+Rewrite examples:
+
+| Avoid (with em dash) | Use instead |
+| --- | --- |
+| `The incident, attributed by Mandiant to FIN7, affected 12 organisations.` (already correct, no em dash) | n/a |
+| `Patch within 7 days. Out-of-band patching is acceptable.` (already correct, no em dash) | n/a |
+
+If you find yourself reaching for a dash, ask: would a comma, period, colon, semicolon, or pair of parentheses do the same job? Almost always yes.
+
+Apply to every output. This includes prose, table cells, headings, captions, footers, alt text, ARIA descriptions, comments inside code blocks (YAML, KQL, SQL, SVG titles), JSON description fields, badge labels, everything.
+
+Before producing the final HTML, search the output for U+2014 and U+2013. If any are present, rewrite those sentences. The same rule applies to triple-hyphen sequences (`---`) used as a sentence dash; reserve `---` for horizontal-rule separators only.
+
+---
+
 ## Reporting window
 
 Use today's date (provided in the conversation context) to compute the window.

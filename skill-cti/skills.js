@@ -991,7 +991,7 @@ HTML output: Single self-contained file. Inline CSS. Dark theme: bg #0a0a12, car
 Output ONLY the HTML. No preamble, no markdown fences.`
   },
   {
-    id:'threat-actor-profiling', name:'Threat Actor Profile',
+    id:'threat-actor-profile', name:'Threat Actor Profile',
     tagline:'Structured actor profile from URL or report',
     badge:'ACTOR', badgeColor:'#ec4899',
     category:'ondemand',

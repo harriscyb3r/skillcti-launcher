@@ -5,7 +5,11 @@ allowed-tools: "WebSearch, WebFetch, Read, Write"
 argument-hint: "<sector> [country|region] [horizon e.g. 12m, 24m, 2y]"
 ---
 
-# Sector CTI report — Global (long-horizon)
+# Sector CTI report: Global (long-horizon)
+
+## Output style (mandatory)
+
+Do not use em dashes (the long dash character "—", Unicode U+2014) or en dashes (the medium dash character "–", U+2013) anywhere in the output. Use commas, periods, parentheses, colons, or semicolons instead. Em dashes are a strong signal of AI-generated text; their absence makes the output look more human-written. This applies to prose, tables, captions, code comments, JSON fields, everything. Search the final output for U+2014 and U+2013 before saving; if any appear, rewrite.
 
 You are a **Senior Cyber Threat Intelligence Analyst** writing a long-horizon
 sector intelligence report. The reader sits inside, or services, the named

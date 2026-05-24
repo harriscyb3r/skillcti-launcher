@@ -32,6 +32,52 @@ API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 REPORTS_DIR = Path(__file__).resolve().parent / "reports"
 REPORTS_DIR.mkdir(exist_ok=True)
 
+# ── Universal output-style rule ───────────────────────────────
+# Injected into the system message of every Anthropic API call forwarded
+# through this proxy. Suppresses em dashes and en dashes, which have
+# become a strong signal that text is AI-generated. Their absence makes
+# the launcher's HTML reports look more human-written.
+
+STYLE_RULE = (
+    "Output style (mandatory): Do not use em dashes (Unicode U+2014, "
+    "the long dash character) or en dashes (U+2013, the medium dash "
+    "character) anywhere in the output. Em dashes are a strong signal "
+    "that text is AI-generated; their absence makes the output look more "
+    "human-written. Substitute a period, comma, parentheses, colon, or "
+    "semicolon instead. This applies to prose, table cells, headings, "
+    "captions, footers, alt text, code comments, JSON description "
+    "fields, badge labels, everything. Before producing the final "
+    "output, search for U+2014 and U+2013 and rewrite any occurrences. "
+    "Reserve triple-hyphen sequences for horizontal-rule separators in "
+    "markdown only."
+)
+
+
+def _inject_style_rule(body):
+    """Prepend STYLE_RULE to the system field of an Anthropic
+    /v1/messages request body. Returns the original body unchanged if
+    the body is not JSON or the system field is in an unrecognised
+    shape. Anthropic accepts system as either a string or a list of
+    content blocks (used for prompt caching); both are handled."""
+    try:
+        payload = json.loads(body.decode("utf-8"))
+    except Exception:
+        return body
+    if not isinstance(payload, dict):
+        return body
+    existing = payload.get("system")
+    if existing is None:
+        payload["system"] = STYLE_RULE
+    elif isinstance(existing, str):
+        payload["system"] = STYLE_RULE + "\n\n" + existing
+    elif isinstance(existing, list):
+        # Insert as the first content block so it is read first.
+        payload["system"] = [{"type": "text", "text": STYLE_RULE}] + existing
+    else:
+        return body
+    return json.dumps(payload).encode("utf-8")
+
+
 # ── Headless-browser PDF conversion ───────────────────────────
 # Uses Microsoft Edge or Google Chrome's headless mode to render HTML to a
 # real vector PDF. Edge ships with Windows 11 by default. We cache the
@@ -880,6 +926,11 @@ class ProxyHandler(BaseHTTPRequestHandler):
                 "error": "ANTHROPIC_API_KEY environment variable is not set."
             })
             return
+
+        # Inject the universal output-style rule into the system message
+        # so every launcher invocation gets it, regardless of which skill
+        # card is firing.
+        body = _inject_style_rule(body)
 
         target_url = ANTHROPIC_API + self.path
         req = urllib.request.Request(
