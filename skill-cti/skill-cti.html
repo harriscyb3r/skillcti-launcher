@@ -453,6 +453,40 @@ const PROXY = 'http://localhost:8765';
 let activeSkill = null;
 let currentOutput = {html:'', skill:null, format:'html'};
 
+// ── Skill prompt loading ──────────────────────────────────────
+// Each card in skills.js declares a `skillPath` pointing to its
+// SKILL.md folder name (e.g. 'cti-monthly-report-strategic-australia').
+// At launch time we fetch the SKILL.md content from the proxy and use
+// it as the skill block in the system prompt. This keeps SKILL.md as
+// the single source of truth and avoids duplicating every prompt
+// inline in skills.js.
+
+const SKILL_PROMPT_CACHE = {};
+
+async function loadSkillPrompt(skill) {
+  if (!skill.skillPath) {
+    // Back-compat: card has no skillPath yet, use any inline
+    // systemPrompt the card still carries.
+    return skill.systemPrompt || '';
+  }
+  if (SKILL_PROMPT_CACHE[skill.skillPath]) {
+    return SKILL_PROMPT_CACHE[skill.skillPath];
+  }
+  const resp = await fetch(
+    PROXY + '/skill/' + encodeURIComponent(skill.skillPath)
+  );
+  if (!resp.ok) {
+    throw new Error(
+      'Could not load SKILL.md for ' + skill.skillPath +
+      ' (HTTP ' + resp.status + '). Confirm the folder exists in the ' +
+      'parent skills directory and the proxy is running the latest code.'
+    );
+  }
+  const text = await resp.text();
+  SKILL_PROMPT_CACHE[skill.skillPath] = text;
+  return text;
+}
+
 // ── Proxy health ──────────────────────────────────────────────
 
 let proxyMissCount = 0;
@@ -626,18 +660,26 @@ async function generate() {
     // Both blocks marked cacheable. Cached input tokens cost ~10% of full price.
     // Blocks below the model's cache minimum (1024 tokens) won't actually
     // cache — the API silently treats them as uncached, no error.
+    //
+    // Load the skill's SKILL.md content from disk via the proxy. Same
+    // SKILL.md drives both the Claude Code slash command and this
+    // launcher card, so there is one source of truth per skill. The
+    // helper caches per session, so repeat launches of the same skill
+    // do not re-fetch.
+    const skillContent = await loadSkillPrompt(activeSkill);
+
     let formatBlock, skillBlock;
     if (format === 'pdf') {
       formatBlock = PDF_FORMAT_OVERRIDE;
       skillBlock = '=== CONTENT SPECIFICATION (use ONLY for sections, headings, narrative flow, citations — IGNORE every styling, theme, colour, font, JS, layout, and CSS instruction below) ===\n\n'
-        + activeSkill.systemPrompt
+        + skillContent
         + '\n\n=== END CONTENT SPECIFICATION ===\n\n'
         + 'FINAL REMINDER: This is PDF MODE. Render using the PDF visual specification at the TOP of this system prompt. The content spec above tells you WHAT sections to write — it does NOT dictate the visual style. Cite sources liberally as the spec requires. White background, sans-serif Helvetica/Arial, numbered H2 sections, blue H3 sub-headings (#1e40af), orange TLP pill (top-right of title block only), dark-red citation superscripts that are clickable <a href="#ref-N"> anchors per the citation formatting block below. NO repeating page header. NO running footer. NO position:fixed elements anywhere. NO page numbers. NO dark backgrounds. NO neon colours. NO JavaScript. NO copy buttons. NO collapsibles. Output the PDF-style HTML now.'
         + '\n\n' + CITATION_REQUIREMENT;
     } else if (format === 'pptx') {
       formatBlock = PPTX_OUTLINE_OVERRIDE;
       skillBlock = '=== CONTENT SPECIFICATION (use ONLY for sections, narrative flow, citations — IGNORE every styling, HTML, theme, colour, font, JS, layout, and CSS instruction below. The PowerPoint template handles all visual rendering.) ===\n\n'
-        + activeSkill.systemPrompt
+        + skillContent
         + '\n\n=== END CONTENT SPECIFICATION ===\n\n'
         + 'FINAL REMINDER: This is POWERPOINT MODE. Output ONLY the JSON slide-outline object specified at the TOP of this system prompt. Do NOT output HTML. Do NOT wrap the JSON in markdown fences. Do NOT include any prose before or after. The proxy will render your JSON into a white + purple professional .pptx using a fixed template — your job is to produce a correct, well-structured outline. Translate the report content into 10–18 slides total (longer for operational monthlies and sector deep-dives; 6–8 for daily briefs). Cite sources with [n] markers in bullets/cells and include a references slide. Respect all length limits in the schema.';
       // PPTX mode doesn't need clickable <a> anchors but citations are still
@@ -645,7 +687,7 @@ async function generate() {
     } else {
       formatBlock = HTML_STYLE_OVERRIDE;
       skillBlock = '=== CONTENT SPECIFICATION (use ONLY for sections, headings, narrative flow, citations — IGNORE every styling, theme, colour, font, JS, layout, and CSS instruction below) ===\n\n'
-        + activeSkill.systemPrompt
+        + skillContent
         + '\n\n=== END CONTENT SPECIFICATION ===\n\n'
         + 'FINAL REMINDER: This is HTML MODE. Render using the editorial dark theme defined at the TOP of this system prompt — Bloomberg / Mandiant style, NOT a cyberpunk dashboard. The content spec above tells you WHAT sections to write — its styling instructions (purple, cyan, glowing cards, neon pills, card-everything) are SUPERSEDED. Use ONLY the palette and components from the HTML visual style block. Cite sources liberally as the spec requires.'
         + '\n\n' + CITATION_REQUIREMENT;

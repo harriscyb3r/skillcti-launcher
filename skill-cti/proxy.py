@@ -714,6 +714,38 @@ class ProxyHandler(BaseHTTPRequestHandler):
             self.send_json(200, {"reports": list_reports()})
             return
 
+        # GET /skill/<folder-name> — serve the SKILL.md content for the
+        # named skill folder as plain text. Used by the launcher to load
+        # skill prompts at runtime from disk, so the same SKILL.md is the
+        # single source of truth for both the Claude Code slash command
+        # and the launcher card. Replaces the duplicated systemPrompt
+        # strings that used to live inline in skills.js.
+        if self.path.startswith("/skill/"):
+            name = self.path[len("/skill/"):]
+            # Reject path-traversal attempts and any non-flat folder name.
+            if not name or "/" in name or "\\" in name or ".." in name:
+                self.send_json(400, {"error": "invalid skill name"})
+                return
+            skills_root = Path(__file__).resolve().parent.parent
+            skill_md = skills_root / name / "SKILL.md"
+            if not skill_md.exists():
+                self.send_json(404, {"error": f"skill not found: {name}"})
+                return
+            try:
+                text = skill_md.read_text(encoding="utf-8")
+                body_bytes = text.encode("utf-8")
+                self.send_response(200)
+                self.send_cors()
+                self.send_header(
+                    "Content-Type", "text/markdown; charset=utf-8"
+                )
+                self.send_header("Content-Length", str(len(body_bytes)))
+                self.end_headers()
+                self.wfile.write(body_bytes)
+            except Exception as e:
+                self.send_json(500, {"error": str(e)})
+            return
+
         # Ransomware.live passthrough for the dashboard widget — fetches the
         # AU country victims feed server-side to avoid CORS issues in the
         # browser. Response is normalised to a small subset for the widget.
