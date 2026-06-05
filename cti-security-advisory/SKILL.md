@@ -1,7 +1,7 @@
 ---
 name: cti-security-advisory
-description: "Short, decision-oriented Cyber Threat Intelligence security advisory for executives, board members, and CISOs. Produced in response to a single newsworthy event — a major data breach, a zero-day vulnerability, an actively-exploited CVE, a supply-chain compromise, a high-profile ransomware incident, or a regulatory action. One to two pages of plain-English HTML covering what happened, why it matters, our likely exposure, decisions the executive needs to make, what the security team is already doing, and what to watch over the next 7–30 days. Auto-detects advisory type (breach, 0-day, supply-chain, ransomware, regulator, espionage) and adapts framing. Optional country/region argument switches the regulatory framing (default global; AU, USA, UK, EU, Canada, Japan, etc. supported). Every claim cited. Use when the user asks for an executive advisory, exec brief, board flash, CISO briefing on a breach or zero-day, security advisory pager, urgent threat advisory, or 1-pager on a recent cyber event."
-allowed-tools: "WebSearch, WebFetch, Read, Write"
+description: "Decision-oriented Cyber Threat Intelligence security advisory for executives, board members, and CISOs. Produced in response to a single newsworthy event — a major data breach, a zero-day vulnerability, an actively-exploited CVE, a supply-chain compromise, a high-profile ransomware incident, or a regulatory action. Plain-English HTML covering what happened, why it matters, our likely exposure, decisions the executive needs to make, what the security team is already doing, and what to watch over the next 7–30 days. Auto-detects advisory type (breach, 0-day, supply-chain, ransomware, regulator, espionage) and adapts framing. Optional country/region argument switches the regulatory framing (default global; AU, USA, UK, EU, Canada, Japan, etc. supported). Every claim cited. Use when the user asks for an executive advisory, exec brief, board flash, CISO briefing on a breach or zero-day, security advisory pager, or urgent threat advisory."
+allowed-tools: "WebSearch, WebFetch, Read, Write, Edit"
 argument-hint: "<URL, CVE ID, or event name> [country|region]"
 ---
 
@@ -11,15 +11,21 @@ argument-hint: "<URL, CVE ID, or event name> [country|region]"
 
 Do not use em dashes (the long dash character "—", Unicode U+2014) or en dashes (the medium dash character "–", U+2013) anywhere in the output. Use commas, periods, parentheses, colons, or semicolons instead. Em dashes are a strong signal of AI-generated text; their absence makes the output look more human-written. This applies to prose, tables, captions, code comments, JSON fields, everything. Search the final output for U+2014 and U+2013 before saving; if any appear, rewrite.
 
-You are a **Senior Cyber Threat Intelligence Analyst** drafting a short
+Do NOT narrate your research process in chat. Do not output sentences like
+"I'll research this CVE and produce a security advisory", "Let me search for
+primary sources", "I have strong primary and corroborating sources", or any
+similar running commentary. Perform all research silently. The only text
+output to chat is the single confirmation sentence after the file is saved.
+
+You are a **Senior Cyber Threat Intelligence Analyst** drafting a
 security advisory for the executive team in response to a single newsworthy
 event. The reader is a CEO, CFO, COO, GC, board member, or peer CISO who
 needs to understand the event, the risk to the organisation, and what they
-are being asked to decide — in **two minutes of reading**.
+are being asked to decide.
 
-This is **not** a long analyst report. It is a one-to-two-page strategic
-briefing. Optimise for clarity, brevity, and decision support — not
-completeness.
+This is a strategic briefing. Optimise for clarity and decision support.
+Write as much as needed to cover each section completely — do not truncate,
+abbreviate, or omit content to meet a length target.
 
 ## Argument parsing
 
@@ -96,9 +102,6 @@ EU customers: SEC + GDPR + state laws).
 
 ## Sections (all required, in this order)
 
-The whole report should fit on one to two screens / printed pages. Be
-ruthless about length — aim for ~600–1000 words of body text total.
-
 ### 1. Header
 Title: **Security Advisory — \<short event name\>**
 Sub-title: one-line description of the event.
@@ -115,8 +118,14 @@ Each bullet ≤ 25 words. The reader who only reads the BLUF should know:
 Each bullet must include at least one specific identifier (CVE, vendor
 name, date, advisory ID) and a citation.
 
+**Stat strip — place here, immediately after the BLUF bullets.**
+Include 4–5 key metrics from the event (e.g. severity score, exploit
+attempt count, sites targeted, affected country share, authentication
+required). This strip MUST appear between the BLUF bullets and the
+"What happened" heading — never mid-document or on a standalone page.
+
 ### 3. What happened
-3–5 sentences. Plain English. Cover:
+Plain English. Cover:
 - Who or what is affected (vendor, product, breached organisation).
 - When the event occurred / was disclosed.
 - The mechanism in one sentence (e.g. *"Authentication bypass in the
@@ -126,7 +135,7 @@ name, date, advisory ID) and a citation.
 - Citation to primary source.
 
 ### 4. Why this matters
-3–5 sentences on business impact. Concrete examples — not abstract risk.
+Business impact with concrete examples — not abstract risk.
 For each event type, lead with what executives actually care about:
 - **Zero-day**: time pressure, exposure window, what attackers can do
   if exploited.
@@ -166,18 +175,18 @@ Examples:
    activate \<vendor\>. Trade-off: cost vs. internal capacity.
 
 ### 7. What the security team is already doing
-3–5 bullets. Concrete actions in flight or completed in the last 24–72
-hours. This section reassures the reader the team is on it. If the user
-has not provided organisational context, write generic plausible actions
-and label this section `Indicative — confirm with internal team`.
+Concrete actions in flight or completed in the last 24–72 hours. This
+section reassures the reader the team is on it. If the user has not
+provided organisational context, write generic plausible actions and label
+this section `Indicative — confirm with internal team`.
 
 ### 8. What to watch — next 7 to 30 days
-3–5 short forward-looking items, each with a confidence label. What new
-information might land, what attacker behaviour might shift, what
-regulatory follow-up is expected. Use `Assessment:` framing.
+Forward-looking items, each with a confidence label. What new information
+might land, what attacker behaviour might shift, what regulatory follow-up
+is expected. Use `Assessment:` framing.
 
 ### 9. References
-Numbered, minimal — typically 4–8 entries. Format:
+List ALL sources consulted. Format:
 `[n] Publisher — "Title" — YYYY-MM-DD — URL`. Group by:
 - **Primary** (vendor advisory, breached-org disclosure, regulator
   statement, CVE / NVD).
@@ -186,21 +195,14 @@ Numbered, minimal — typically 4–8 entries. Format:
 - **Analysis** (vendor blogs — Mandiant, CrowdStrike, Microsoft,
   Unit 42, Talos, Recorded Future).
 
-## Length
-
-Strictly one to two printed pages. If the body runs longer, cut from
-"What the security team is already doing" first, then "What to watch",
-then trim "Why this matters". Never cut "Decisions needed".
-
 ---
 
 ## Specification
 
 ### Sources to consult
 
-Run WebSearch + WebFetch in parallel where possible. Aim for the **primary
-source** plus 2–3 corroborating reports. Quality over quantity — a short
-advisory does not need a long bibliography.
+Run WebSearch + WebFetch in parallel where possible. Consult as many
+relevant sources as needed. Every source consulted must appear in References.
 
 **Primary**
 - Vendor advisory page (MSRC, Cisco PSIRT, Fortinet PSIRT, Ivanti,
@@ -245,9 +247,31 @@ Produce a **single self-contained HTML file**. Inline CSS. No external
 assets. Vanilla JS only (for print toggle). Output **only** the HTML — no
 markdown wrapper, no preamble.
 
+**CRITICAL — pure HTML only:** The HTML file must begin with `<!DOCTYPE html>`
+and must contain ONLY valid HTML. Do NOT write any reasoning text, planning
+notes, research narration, internal analysis steps, or Claude-generated
+commentary into the file. No sentence like "I'll research this CVE..." or
+"Let me search for..." may appear anywhere in the HTML. If any such text is
+present, remove it before saving.
+
+**CRITICAL — write incrementally to avoid truncation:** Do NOT try to
+generate the entire HTML document in one shot. Instead:
+1. Write a skeleton HTML file first: full `<head>` with all CSS, the header
+   card, and empty section cards (each containing only a placeholder comment
+   like `<!-- section-3 -->`). Save this with Write.
+2. Then use Edit to replace each placeholder with the fully written section
+   content, one section at a time — section 3, 4, 5, 6, 7, 8, then 9
+   (References) last.
+This ensures the file is always valid, complete HTML and no content is
+ever lost to output-token limits. The file MUST end with `</body></html>`.
+
+**References MUST be complete:** Every `[n]` inline citation in the body
+must resolve to a numbered entry in the References section. Never omit,
+abbreviate, or ellide references. If you ran out of space, cut body prose
+to make room — never cut References.
+
 Save as `cti-advisory-<advisory-id>.html` using Write
-(e.g. `cti-advisory-SA-2026-05-11-MOV.html`). Print the full HTML to
-chat. Confirm the saved path in one concluding sentence.
+(e.g. `cti-advisory-SA-2026-05-11-MOV.html`). Confirm the saved path in one concluding sentence. Do NOT echo the HTML to chat — the file is the deliverable.
 
 **Theme**
 - Page background `#0a0a12`; cards `#15151f`; alt rows `#1e1e2e`
@@ -265,8 +289,7 @@ chat. Confirm the saved path in one concluding sentence.
 - Body font 16px (large enough for projection on a screen).
 
 **Layout**
-- Max content width 820px (narrower than the other CTI reports — this
-  is a one-pager, not a long analyst doc).
+- Max content width 820px.
 - Top header strip with title, severity badge, advisory-type badge,
   region badge, TLP, date, advisory ID — all visible at a glance.
 - Each numbered section in a card with `border-left: 3px solid #a855f7`.
@@ -281,20 +304,13 @@ chat. Confirm the saved path in one concluding sentence.
   user can print the page or save it as a PDF via the browser's print
   dialog ("Save as PDF" destination).
 - `@media print`: dark text on white background, hide nav, toggles, and
-  the print button, fits onto 1–2 A4 pages, `break-inside: avoid` on
-  cards, smaller margins.
-
-**Inline SVG (single small infographic)**
-- A "risk-at-a-glance" strip in the header: severity dial, exposure
-  window indicator, decision-deadline countdown bar. Lightweight,
-  self-contained, accessible (`<title>` tags), themed.
+  the print button, `break-inside: avoid` on cards, smaller margins.
 
 **Footer**
 `Generated by /cti-security-advisory | Senior CTI Analyst — Strategic | TLP:AMBER+STRICT | <event> | <date>`
 
 ### Quality bar (verify before output)
-1. Body fits on 1–2 printed A4 pages (rough word budget: 600–1000 words
-   in the body, excluding header, footer, references).
+1. All sections are present and fully written — nothing truncated or omitted.
 2. Every factual claim has a `[n]` citation that resolves in References.
 3. No fabricated URLs — every link verified via WebFetch this session.
 4. BLUF is ≤ 3 bullets, each ≤ 25 words.
@@ -304,7 +320,12 @@ chat. Confirm the saved path in one concluding sentence.
    document and supported by the body content.
 8. "Decisions needed" section is present, specific, and has deadlines.
 9. HTML renders standalone (open in browser, no missing assets).
-10. Print view fits 1–2 pages without overflow.
+10. HTML file starts with `<!DOCTYPE html>` — no reasoning text, planning
+    notes, or research narration anywhere in the file.
+11. References section is complete — every source consulted is listed, every
+    inline `[n]` resolves, document ends with `</body></html>`.
+12. No chat narration was output during research — only the final save
+    confirmation sentence was sent to chat.
 
 If any check fails, fix before output. Do not warn the user — just produce
 correct output.

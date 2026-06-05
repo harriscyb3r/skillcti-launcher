@@ -208,7 +208,7 @@ Group the References list by these categories (regulator/CERT, global media, reg
 
 ## Output file
 
-Save as `cti-report-<region-slug>-strategic-<YYYY-MM>.html` using Write (where `<region-slug>` is `global` if no region specified, otherwise a lower-case ASCII slug like `usa`, `uk`, `eu`, `apac`, `five-eyes`). Then print the full HTML to chat. Confirm the saved path in one concluding sentence.
+Save as `cti-report-<region-slug>-strategic-<YYYY-MM>.html` using Write (where `<region-slug>` is `global` if no region specified, otherwise a lower-case ASCII slug like `usa`, `uk`, `eu`, `apac`, `five-eyes`). Confirm the saved path in one concluding sentence. Do NOT echo the HTML to chat — the file is the deliverable.
 
 ## Footer (overrides the universal footer in the shared spec)
 

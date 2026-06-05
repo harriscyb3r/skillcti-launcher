@@ -317,8 +317,13 @@ Region-specific obligations to layer on top (additive):
 - Do not invent data points beyond the verified list.
 - Do not moralise about AI risk in the abstract.
 
+## HTML output
+
+Single self-contained dark-themed HTML file. Inline CSS. Vanilla JS only (for nav and print). Dark theme: page background `#0a0a12`, card background `#15151f`, purple primary `#a855f7`, cyan secondary `#06b6d4`, body text `#e8e6ff`, secondary text `#9c98c0`. Each section in a card with `border-left: 3px solid #a855f7`. Max content width 1100px.
+
+- **Sticky top nav** with anchor links to each section. Implement scrollspy with `IntersectionObserver` (`rootMargin: "-15% 0px -75% 0px"`, `threshold: 0`). Active link: `color: #06b6d4; border-bottom: 2px solid #06b6d4; background: rgba(6,182,212,0.10); border-radius: 4px; padding: 2px 6px`. Inactive: `color: #9c98c0`. Transitions: `color 0.2s ease, background 0.2s ease`. Set `aria-current="true"` on the active link; remove from all others on each update.
+- **Print / Save as PDF** button, fixed top-right, calls `window.print()`. `@media print`: dark text on white, hide nav and print button, `break-inside: avoid` on tables and SVGs.
+
 ## Output file
 
-Save as `cti-mythos-ready-<client-slug>-<YYYY-MM-DD>.html` via Write.
-Output **only the HTML** in chat. Confirm the saved path in one
-closing sentence.
+Save as `cti-mythos-ready-<client-slug>-<YYYY-MM-DD>.html` via Write. Confirm the saved path in one closing sentence. Do NOT echo the HTML to chat — the file is the deliverable.

@@ -181,7 +181,7 @@ When mapping advisories, incidents, or recommendations to controls, use **curren
 
 - Produce a **single self-contained HTML file**. Inline CSS. No external assets. Vanilla JS only (for nav / print / presentation toggle).
 - Output **only** the HTML — no markdown wrapper, no preamble.
-- Use Write to save to the path the skill defines; then print the full HTML to chat. Confirm the saved path in one concluding sentence.
+- Use Write to save to the path the skill defines. Confirm the saved path in one concluding sentence. Do NOT echo the HTML to chat — the file is the deliverable.
 
 ### Theme (dark)
 
@@ -221,7 +221,13 @@ Default for analyst-grade output: `TLP:AMBER+STRICT`. Strategic/board briefs may
 
 - Max content width 1100px (820px for security-advisory-style one-pagers; 1400px for the incident timeline; 1280px for the ATT&CK Navigator matrix).
 - Centered, generous padding.
-- Sticky top nav with anchor links to each numbered section.
+- Sticky top nav with anchor links to each numbered section. Implement **scrollspy** so the link for the currently visible section is highlighted as the user scrolls:
+  - Give each top-level section a unique `id` (e.g. `id="s1"`, `id="s2"`, …). Each nav link must have the matching `href="#s1"` etc.
+  - Observe each section element (or its `<h2>` heading) with `IntersectionObserver` using `rootMargin: "-15% 0px -75% 0px"` and `threshold: 0`. When a section enters the intersection zone (its top 10% of the viewport), mark it active. Track the most recently entered section in a `let currentId = null` variable.
+  - Active nav link style: `color: #06b6d4; border-bottom: 2px solid #06b6d4; background: rgba(6,182,212,0.10); border-radius: 4px; padding: 2px 6px`. Inactive: `color: #9c98c0`. Both states include `transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease`.
+  - Set `aria-current="true"` on the active link and remove it from all others on every update so screen-reader users hear their position.
+  - Only update the DOM when `currentId` changes to avoid reflow thrashing on fast scroll.
+  - In **presentation mode** the nav is hidden; keep the observer attached but skip DOM updates while `body.presentation-mode` is active so state is correct when returning to document mode.
 - Each section in a card with `border-left: 3px solid #a855f7`.
 - Tables: zebra rows, monospace technical columns, sticky headers.
 - Footnote pills (small superscript), hover tooltip with source title, click jumps to the References section.
@@ -311,7 +317,7 @@ Target conformance: **WCAG 2.2 Level AA** (<https://www.w3.org/WAI/WCAG22/quickr
 4. **Forecasts, outlook, and trend assessments** use the WEP + source-confidence format defined in "Analytic confidence and probability" (ICD 203). Single observed events do not require WEP.
 5. TLP marking is consistent across the document, matches the requested level, and cites TLP 2.0 (FIRST.org, Aug 2022) in the footer.
 6. HTML renders standalone (open in browser, no missing assets).
-7. Presentation toggle JS works.
+7. Presentation toggle JS works; scrollspy correctly highlights the active nav link as the user scrolls (verify at least the first and last sections).
 8. Print rules render correctly (test mentally: would this fit on A4?).
 9. **WCAG 2.2 Level AA** achieved: contrast verified, no colour-only conveyance (severity / verdict / TLP badges carry text + icon + colour), every SVG has `<title>` + `<desc>` + `role="img"`, focus rings visible on `:focus-visible`.
 10. Region/sector/window scope is consistent across the report — no silent mid-document drift.

@@ -160,9 +160,7 @@ exercise live.
 Produce a **single self-contained HTML file**. Inline CSS. Vanilla JS only.
 Output **only** the HTML — no markdown wrapper, no preamble.
 
-Save as `cti-tabletop-<actor-or-source-slug>-<YYYY-MM-DD>.html` using Write.
-Then print the HTML to chat. Confirm the saved path in one concluding
-sentence.
+Save as `cti-tabletop-<actor-or-source-slug>-<YYYY-MM-DD>.html` using Write. Confirm the saved path in one concluding sentence. Do NOT echo the HTML to chat — the file is the deliverable.
 
 ### Layout
 - Header: exercise title, source attribution, TLP badge, date, duration.

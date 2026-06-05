@@ -140,4 +140,6 @@ story traces back to a citation.
 to more than one A4 page, cut the weakest stories until it fits. The
 train-read format is the whole point of this skill.
 
+- **Print / Save as PDF** button, fixed top-right, calls `window.print()`. `@media print`: dark text on white, hide the print button, `break-inside: avoid` on tables and pills.
+
 Output **ONLY the HTML**. No preamble, no markdown fences.

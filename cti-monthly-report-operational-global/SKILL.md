@@ -156,7 +156,7 @@ Group the References list by these categories (regulator/CERT, global media, reg
 
 ## Output file
 
-Save as `cti-report-<region-slug>-operational-<YYYY-MM>.html` using Write (where `<region-slug>` is `global` by default). Print the full HTML to chat. Confirm path in one concluding sentence.
+Save as `cti-report-<region-slug>-operational-<YYYY-MM>.html` using Write (where `<region-slug>` is `global` by default). Confirm path in one concluding sentence. Do NOT echo the HTML to chat — the file is the deliverable.
 
 ## Footer (overrides the universal footer in the shared spec)
 

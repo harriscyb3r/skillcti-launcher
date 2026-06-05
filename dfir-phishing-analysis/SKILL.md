@@ -371,8 +371,7 @@ assets. Vanilla JS for the print button and copy-on-click handlers.
 Output **only** the HTML — no markdown wrapper, no preamble.
 
 Save as `dfir-phishing-<investigation-id>.html` using Write
-(e.g. `dfir-phishing-DFIR-PHISH-2026-05-11-OFI.html`). Print the full
-HTML to chat. Confirm the saved path in one concluding sentence.
+(e.g. `dfir-phishing-DFIR-PHISH-2026-05-11-OFI.html`). Confirm the saved path in one concluding sentence. Do NOT echo the HTML to chat — the file is the deliverable.
 
 **Theme**
 - Page background `#0a0a12`; cards `#15151f`; alt rows `#1e1e2e`

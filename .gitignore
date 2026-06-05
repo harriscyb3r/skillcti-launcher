@@ -1,9 +1,4 @@
 # ──────────────────────────────────────────────────────────────────────────
-# Work-in-progress skills (excluded from publish until ready)
-# ──────────────────────────────────────────────────────────────────────────
-cti-ioc-enrich/
-
-# ──────────────────────────────────────────────────────────────────────────
 # Claude Code local settings
 # ──────────────────────────────────────────────────────────────────────────
 .claude/
@@ -16,6 +11,11 @@ cti-ioc-enrich/
 # ──────────────────────────────────────────────────────────────────────────
 skill-cti/reports/*
 !skill-cti/reports/.gitkeep
+
+# ──────────────────────────────────────────────────────────────────────────
+# Generated cache — threat pulse and other server-side caches
+# ──────────────────────────────────────────────────────────────────────────
+skill-cti/backend/cache/
 
 # Also ignore any stray report files that escape the reports/ directory
 *.meta.json

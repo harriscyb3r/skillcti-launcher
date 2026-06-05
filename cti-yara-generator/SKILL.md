@@ -123,6 +123,9 @@ Sections:
 5. Caveats footer — DRAFT status, sandbox validation requirement,
    IOC decay note.
 
+- **Sticky top nav** with anchor links to each section. Implement scrollspy with `IntersectionObserver` (`rootMargin: "-15% 0px -75% 0px"`, `threshold: 0`). Active link: `color: #06b6d4; border-bottom: 2px solid #06b6d4; background: rgba(6,182,212,0.10); border-radius: 4px; padding: 2px 6px`. Inactive: `color: #9c98c0`. Transitions: `color 0.2s ease, background 0.2s ease`. Set `aria-current="true"` on the active link; remove from all others on each update.
+- **Print / Save as PDF** button, fixed top-right, calls `window.print()`. `@media print`: dark text on white, hide nav and print button, `break-inside: avoid` on tables and SVGs.
+
 Output **ONLY the HTML**. No markdown fences, no preamble.
 
 ## Final checks

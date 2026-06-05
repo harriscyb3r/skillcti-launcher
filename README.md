@@ -12,7 +12,7 @@ All HTML reports use a refined editorial dark theme (Bloomberg / Mandiant aesthe
 
 **A. Claude Code slash commands.** Install the skill folders into `~/.claude/skills/` and invoke any skill from a Claude Code session with `/<skill-name>`.
 
-**B. SkillCTI (browser launcher).** A single-page app in `skill-cti/` that exposes every CTI skill as a click-to-run card, plus a free-form CTI Analyst chat, a daily-news dashboard, Cmd+K command palette, theme toggle, present mode, and persistent history with filtering and sorting. Reports auto-save to a local `reports/` directory and can be exported as real vector PDFs via headless Edge.
+**B. SkillCTI (browser launcher).** A full-stack local web app in `skill-cti/` — React 18 + Vite frontend and a FastAPI backend — that exposes every CTI skill as a click-to-run card, plus a free-form CTI Analyst chat, background job system (reports generate server-side and survive closing the browser tab), IOC enrichment, CVE search, domain enumeration, watchlist monitoring, Regional Threat Pulse dashboard, Cmd+K command palette, 7 themes, present mode, and persistent history with filter and sort. Reports auto-save to `skill-cti/reports/` and can be exported as vector PDFs or PowerPoint decks. See `skill-cti/README.md` for the full feature reference and API documentation.
 
 Both paths use the same underlying skill prompts.
 
@@ -40,30 +40,40 @@ Invoke any skill by typing `/<skill-name>` followed by the argument it expects. 
 
 ## Installation — SkillCTI
 
-**Prerequisites:** Python 3.10+ and either Microsoft Edge (default on Windows 10/11) or Google Chrome installed somewhere standard. Edge/Chrome is used for headless HTML → PDF conversion. No Python packages need installing — the proxy uses only the standard library.
+**Prerequisites:** Python 3.11+ and Node.js 18+. An Anthropic API key from [console.anthropic.com](https://console.anthropic.com/).
 
-1. Set your Anthropic API key in the shell that will run the proxy:
+1. **Backend** — copy the example env file, add your API key, install dependencies, and start the server:
    ```
-   export ANTHROPIC_API_KEY=sk-ant-...
+   cd skill-cti/backend
+   cp .env.example .env          # then edit .env and set ANTHROPIC_API_KEY
+   pip install -r requirements.txt
+   python main.py
+   # Backend now running on http://localhost:8765
    ```
-   (Windows PowerShell: `$env:ANTHROPIC_API_KEY = "sk-ant-..."`.)
+   Optional enrichment keys (VirusTotal, AbuseIPDB, urlscan.io, Shodan, ThreatFox) can also be added to `.env` — or set them later in the app's Settings page.
 
-2. Start the local proxy. It keeps the API key out of the browser, persists generated reports to disk, and handles headless-browser PDF conversion:
+2. **Frontend** — install and start the dev server:
    ```
-   cd skill-cti
-   python proxy.py
+   cd skill-cti/app
+   npm install
+   npm run dev
+   # Open http://localhost:5173
    ```
-   You should see a banner listing the API key (masked), the reports directory, the detected browser path for PDF conversion, and the listening port `localhost:8765`.
 
-3. Open `skill-cti/skill-cti.html` in any modern browser.
+3. For a **production build** (serves the entire app from the backend on port 8765 with no Node.js needed):
+   ```
+   cd skill-cti/app && npm run build
+   # Then: cd ../backend && python main.py
+   # Open http://localhost:8765
+   ```
 
-Generated reports are auto-saved to `skill-cti/reports/` as a paired `<id>.html` (or `<id>.pdf`) and `<id>.meta.json`, and surface in the History tab.
+Generated reports are auto-saved to `skill-cti/reports/` as HTML, PDF, or PPTX files and surface in the Reports tab.
 
 ---
 
 ## SkillCTI features
 
-The launcher is a single-file dark-themed HTML app with a left sidebar nav and per-tab content.
+SkillCTI is a full-stack local web application with a React frontend (port 5173 in dev, or served from the FastAPI backend at port 8765 in production) and a left sidebar nav with per-tab content.
 
 ### Home dashboard (default landing tab)
 
@@ -358,6 +368,41 @@ Consolidates raw events (paste logs, IR notes, CSV slices, SIEM exports) into a 
 /dfir-incident-timeline <raw events — paste, file path, or csv> [incident name] [time-zero anchor]
 ```
 
+### `bas-red-team-simulation`
+
+Produces a structured Breach and Attack Simulation (BAS) and red team campaign plan from a target description, organisational profile, security stack, or architecture document. Simulates the written output of commercial BAS platforms (Cymulate, AttackIQ, SafeBreach, Picus Security): campaign playbooks with kill chain narratives, atomic test cases mapped to MITRE ATT&CK, per-control-layer effectiveness ratings (BLOCKED / ALERTED / LOGGED / MISSED), detection coverage heatmap, overall security posture score, and a prioritised remediation roadmap. Every assumption explicitly labelled.
+
+Supports any input form: organisation name, architecture URL, explicit security stack, or a description of the target environment. If a real organisation is named it will search for their public stack and industry context before building the plan.
+
+```
+/bas-red-team-simulation <target description | org name | industry | architecture URL | filename>
+```
+
+Examples:
+- `/bas-red-team-simulation "mid-size Australian bank"` — full kill chain plan with inferred stack
+- `/bas-red-team-simulation "Defender for Endpoint, Sentinel, Proofpoint, Palo Alto"` — plan against a specific stack
+- `/bas-red-team-simulation https://example.com/architecture.pdf` — plan from an architecture document
+
+**Output:** a single self-contained dark-themed HTML report with playbook cards, inline MITRE ATT&CK coverage matrix, control effectiveness gauges, result status badges, and a remediation priority board.
+
+> **Note:** this skill is available as a Claude Code slash command. It is not yet integrated into the SkillCTI browser launcher.
+
+### `dfir-ir-playbook`
+
+Generates a comprehensive, operator-ready Incident Response Playbook for a specific attack type or a full interactive suite of all attack types in one HTML file. Aligned to the **NIST SP 800-61r3** IR lifecycle (Preparation, Detection and Analysis, Containment, Eradication, Recovery, Post-Incident Activity). Supported attack types: **Ransomware**, **Phishing/Credential Harvest**, **Business Email Compromise (BEC)**, **Insider Threat**, **Data Breach/Exfiltration**, **Supply Chain Compromise**, **Web Application Attack**, **Credential Stuffing/Account Takeover**, **Malware Infection**, **DDoS**, **Social Engineering**, **Zero-Day Exploitation**.
+
+Output is a single self-contained dark-themed interactive HTML with a **dropdown attack-type selector**, phase-by-phase **checkbox task lists** (with localStorage persistence across page reloads), **decision trees**, escalation paths, **communication templates** (copy-on-click), **evidence preservation checklists**, regulatory notification guidance, **MITRE ATT&CK TTP mapping**, an **incident tracking panel** (ID, severity, elapsed timer), tooling references, and a JSON state export. Designed to complement pre-existing IR plans.
+
+```
+/dfir-ir-playbook [attack type | 'all'] [organisation context] [region]
+```
+
+Examples:
+- `/dfir-ir-playbook ransomware` — focused ransomware playbook
+- `/dfir-ir-playbook bec AU` — BEC playbook with AU regulatory framing
+- `/dfir-ir-playbook all` — full interactive suite with all 12 attack types, dropdown-selectable
+- `/dfir-ir-playbook insider threat "ASX-listed, M365, hybrid Azure"` — tailored insider threat playbook
+
 ---
 
 ## Strategy
@@ -424,11 +469,13 @@ Facilitator-ready IR Tabletop Exercise from a threat intel input. Six phased inj
 | DFIR Activities | Detection as Code | `/cti-detection-as-code` |
 | DFIR Activities | YARA Rule Generator | `/cti-yara-generator` |
 | DFIR Activities | Incident Timeline | `/dfir-incident-timeline` |
+| DFIR Activities | BAS / Red Team Plan | `/bas-red-team-simulation` |
+| DFIR Activities | IR Playbook Generator | `/dfir-ir-playbook` |
 | Strategy | Mythos-Ready Assessment | `/cti-mythos-ready-assessment` |
 | Strategy | Threat Model (PASTA) | `/cti-threat-model` |
 | Strategy | Tabletop Exercise | `/cti-tabletop` |
 
-**23 skills total** — 22 slash commands plus the standalone Log Analysis dashboard. The launcher's CTI Analyst chat sits across all of them as a discoverability and routing layer.
+**25 skills total** — 24 slash commands plus the standalone Log Analysis dashboard. The launcher's CTI Analyst chat sits across all of them as a discoverability and routing layer.
 
 ---
 
@@ -438,11 +485,21 @@ Facilitator-ready IR Tabletop Exercise from a threat intel input. Six phased inj
 skills/
 ├── README.md
 ├── LICENSE
-├── skill-cti/                      ← the browser launcher
-│   ├── skill-cti.html              ← single-file UI (HTML + CSS + JS)
-│   ├── skills.js                   ← skill catalogue + prompt overrides
-│   ├── proxy.py                    ← local API proxy + PDF generator + history store
-│   └── reports/                    ← auto-saved generated reports (HTML + PDF + .meta.json)
+├── _lib/                           ← shared prompt specs (report-spec.md, report-sources.md)
+├── skill-cti/                      ← the browser launcher (React 18 + FastAPI)
+│   ├── app/                        ← Vite + TypeScript frontend (npm run dev → :5173)
+│   │   └── src/
+│   │       ├── components/
+│   │       ├── pages/
+│   │       └── lib/
+│   ├── backend/                    ← FastAPI backend (python main.py → :8765)
+│   │   ├── routers/
+│   │   ├── services/
+│   │   ├── data/
+│   │   ├── main.py
+│   │   ├── requirements.txt
+│   │   └── .env.example
+│   └── reports/                    ← auto-saved reports — gitignored, .gitkeep committed
 ├── log-analysis/                   ← standalone Sherlog Holmes log dashboard
 │   ├── siem-dashboard.html
 │   └── proxy.py
@@ -466,7 +523,9 @@ skills/
 ├── cti-threat-model/
 ├── cti-tabletop/
 ├── cti-yara-generator/
-└── dfir-incident-timeline/
+├── dfir-incident-timeline/
+├── dfir-ir-playbook/
+└── bas-red-team-simulation/
 ```
 
 Each slash-command folder contains a single `SKILL.md` file with frontmatter (`name`, `description`, `allowed-tools`, `argument-hint`) and a prompt body.
@@ -479,7 +538,7 @@ Each slash-command folder contains a single `SKILL.md` file with frontmatter (`n
 - All citations link back to the original source. If a claim can't be cited, it's flagged as an assumption. In-text `[n]` superscripts are clickable anchors to the references list; reference URLs are clickable links to the source.
 - Detection content (Sigma, KQL, YARA) is **DRAFT**. Tune log sources, field names, and thresholds for your environment before deploying.
 - Australian-flavoured skills assume an ANZ critical-infrastructure context (SOCI Act, ACSC, OAIC NDB, APRA CPS 234, ASD Essential Eight). Global variants swap in the appropriate regional frameworks.
-- The **SkillCTI launcher** and the **slash commands** use the same skill prompts and produce the same outputs. The launcher adds a UI, persistent history with filter/sort, PDF export, Cmd+K command palette, theme toggle, present mode, dashboard widgets, and the CTI Analyst chat; the slash commands integrate with Claude Code's filesystem and IDE awareness.
+- The **SkillCTI launcher** and the **slash commands** use the same underlying skill prompts. The launcher adds a full React + FastAPI application with background job generation, PDF and PPTX export, IOC enrichment, CVE search, domain enumeration, watchlist monitoring, Regional Threat Pulse dashboard, multi-model selection, 7 themes, Cmd+K command palette, present mode, and the CTI Analyst chat. The slash commands integrate with Claude Code's filesystem and IDE awareness. See `skill-cti/README.md` for the complete feature reference.
 
 ## License
 

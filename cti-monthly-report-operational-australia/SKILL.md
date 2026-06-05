@@ -138,7 +138,7 @@ Group the References list by these categories (AU gov, AU media, global media, v
 
 ## Output file
 
-Save as `cti-report-au-operational-<YYYY-MM>.html` using Write, then print the full HTML to chat. Confirm the saved path in one concluding sentence.
+Save as `cti-report-au-operational-<YYYY-MM>.html` using Write. Confirm the saved path in one concluding sentence. Do NOT echo the HTML to chat — the file is the deliverable.
 
 ## Footer (overrides the universal footer in the shared spec)
 

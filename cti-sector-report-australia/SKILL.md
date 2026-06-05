@@ -259,7 +259,7 @@ Group the References list by category: AU gov / regulator, sector ISAC / industr
 
 ## Output file
 
-Save as `cti-sector-au-<sector-slug>-<YYYY-MM>.html` using Write (where `<sector-slug>` is the sector lowercased and hyphenated, e.g. `healthcare`, `food-and-grocery`). Print the full HTML to chat. Confirm the saved path in one concluding sentence.
+Save as `cti-sector-au-<sector-slug>-<YYYY-MM>.html` using Write (where `<sector-slug>` is the sector lowercased and hyphenated, e.g. `healthcare`, `food-and-grocery`). Confirm the saved path in one concluding sentence. Do NOT echo the HTML to chat — the file is the deliverable.
 
 ## Inline SVG infographics (sector-specific additions)
 

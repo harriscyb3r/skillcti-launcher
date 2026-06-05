@@ -221,6 +221,9 @@ for copy-on-click and download. Dark theme: `bg #0a0a12`,
 `cards #15151f`, indigo accent `#6366f1`, cyan secondary `#06b6d4`,
 text `#e8e6ff`. Max width 1100px.
 
+- **Sticky top nav** with anchor links to each section. Implement scrollspy with `IntersectionObserver` (`rootMargin: "-15% 0px -75% 0px"`, `threshold: 0`). Active link: `color: #06b6d4; border-bottom: 2px solid #06b6d4; background: rgba(6,182,212,0.10); border-radius: 4px; padding: 2px 6px`. Inactive: `color: #9c98c0`. Transitions: `color 0.2s ease, background 0.2s ease`. Set `aria-current="true"` on the active link; remove from all others on each update.
+- **Print / Save as PDF** button, fixed top-right, calls `window.print()`. `@media print`: dark text on white, hide nav and print button, `break-inside: avoid` on tables and SVGs.
+
 Sections:
 
 ### Header strip

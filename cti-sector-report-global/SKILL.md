@@ -301,7 +301,7 @@ Group the References list by category: regulator/CERT, sector ISAC / industry, g
 
 ## Output file
 
-Save as `cti-sector-<region-slug>-<sector-slug>-<YYYY-MM>.html` using Write (where `<region-slug>` is `global` by default, otherwise the region lowercased and hyphenated; `<sector-slug>` is the sector lowercased and hyphenated). Print the full HTML to chat. Confirm the saved path in one concluding sentence.
+Save as `cti-sector-<region-slug>-<sector-slug>-<YYYY-MM>.html` using Write (where `<region-slug>` is `global` by default, otherwise the region lowercased and hyphenated; `<sector-slug>` is the sector lowercased and hyphenated). Confirm the saved path in one concluding sentence. Do NOT echo the HTML to chat — the file is the deliverable.
 
 ## Inline SVG infographics (sector-specific additions)
 

@@ -844,20 +844,6 @@ const ONDEMAND_SKILLS = [
     skillPath:'threat-actor-profile'
   },
   {
-    id:'ioc-enrich', name:'IOC Enrichment',
-    tagline:'IR-grade enrichment for IPs, domains, URLs, hashes — incl. WHOIS',
-    badge:'IOC', badgeColor:'#0ea5e9',
-    category:'ondemand',
-    description:'Triages IOCs for incident response. Per-IOC verdict (malicious / suspicious / clean / unknown), confidence, source-by-source evidence. For every domain and IP: full WHOIS lookup (registrar, dates, registrant org / country, name servers, abuse contact). Plus VirusTotal, AbuseIPDB, urlscan, Spur, Shodan, GreyNoise, Talos, Hybrid Analysis, Joe Sandbox, ANY.RUN, MalwareBazaar.',
-    inputs:[
-      {id:'iocs',label:'IOCs — one per line or pasted block',type:'textarea',required:true,placeholder:'8.8.8.8\nevil-c2[.]xyz\nhxxps://phish[.]example/login\nd41d8cd98f00b204e9800998ecf8427e\n44d88612fea8a8f36de82e1278abb02f\nbe16b6e80b3c9a3a07c7a8a1bf52bf99c9c4a83c'},
-      {id:'context',label:'Incident context (optional)',type:'text',placeholder:'Suspected phishing campaign · M365 token theft'}
-    ],
-    buildMsg:v=>`${v.iocs.trim()}${v.context?'\n\nContext: '+v.context:''}`,
-    needsSearch:true, maxTokens:14000,
-    skillPath:'cti-ioc-enrich'
-  },
-  {
     id:'admiralty-assessment', name:'Admiralty Assessment',
     tagline:'Grade an intel report against the NATO Admiralty Code',
     badge:'ADMIRALTY', badgeColor:'#0891b2',
@@ -972,6 +958,42 @@ const DFIR_SKILLS = [
     buildMsg:v=>`${v.incident?'Incident: '+v.incident+'\n\n':''}${v.anchor?'Time-zero anchor: '+v.anchor+'\n\n':''}Events:\n${v.events.trim()}`,
     needsSearch:false, maxTokens:14000,
     skillPath:'dfir-incident-timeline'
+  },
+  {
+    id:'ir-playbook', name:'IR Playbook Generator',
+    tagline:'NIST 800-61r3 operator playbooks for 12 attack types',
+    badge:'IR PLAYBOOK', badgeColor:'#0891b2',
+    category:'dfir',
+    description:'Generates an interactive, operator-ready Incident Response Playbook aligned to the NIST SP 800-61r3 lifecycle (Preparation, Detection and Analysis, Containment, Eradication, Recovery, Post-Incident). Choose a single attack type or generate all 12 in one switchable HTML. Each playbook includes phase-by-phase checkbox task lists (with localStorage persistence), decision trees, escalation paths, copy-on-click communication templates, evidence preservation checklists, regulatory notification guidance, MITRE ATT&CK mapping, an incident tracking panel (ID, severity, elapsed timer), and a JSON state export. Designed to complement pre-existing IR plans.',
+    inputs:[
+      {id:'attacktype',label:'Attack type',type:'select',options:[
+        'all (full interactive suite)',
+        'Ransomware',
+        'Phishing / Credential Harvest',
+        'Business Email Compromise (BEC)',
+        'Insider Threat',
+        'Data Breach / Exfiltration',
+        'Supply Chain Compromise',
+        'Web Application Attack',
+        'Credential Stuffing / Account Takeover',
+        'Malware Infection',
+        'DDoS / Availability Attack',
+        'Social Engineering',
+        'Zero-Day Exploitation'
+      ]},
+      {id:'orgcontext',label:'Organisation context (optional)',type:'text',placeholder:'e.g. ASX-listed financial services, M365, hybrid Azure/on-prem'},
+      {id:'region',label:'Regulatory region',type:'select',options:['AU','USA','UK','EU','Canada','Singapore','Japan','Global']}
+    ],
+    buildMsg:v=>{
+      const type = v.attacktype && !v.attacktype.startsWith('all') ? v.attacktype : 'all';
+      return [
+        type === 'all' ? 'all' : type,
+        v.orgcontext ? v.orgcontext.trim() : '',
+        v.region || 'AU'
+      ].filter(Boolean).join(' ');
+    },
+    needsSearch:false, maxTokens:20000,
+    skillPath:'dfir-ir-playbook'
   }
 ];
 // ── Strategy — forward-looking advisory, planning, exercises ───
