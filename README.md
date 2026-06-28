@@ -1,545 +1,415 @@
-# CTI & DFIR Skills for Claude Code
+# SkillCTI
 
-A collection of **Cyber Threat Intelligence (CTI)** and **Digital Forensics and Incident Response (DFIR)** skills for [Claude Code](https://claude.com/claude-code), plus a self-hosted browser launcher called **SkillCTI** with a built-in CTI Analyst chat, a daily-news dashboard, and a project-ready PDF export pipeline.
+An AI-powered Cyber Threat Intelligence platform. Generate professional analyst reports, search IOCs, enumerate domains, track CVEs, manage cases, and monitor threat actor activity — all from a single local web application backed by Claude.
 
-Each skill turns a common analyst workflow — profiling an actor, enriching IOCs, building a threat model, drafting detections, running a tabletop, publishing a monthly report, investigating a phishing email, building YARA, exporting STIX, generating an ATT&CK Navigator layer, reconstructing an incident timeline — into a single command that produces a polished, client-deliverable HTML or PDF.
-
-All HTML reports use a refined editorial dark theme (Bloomberg / Mandiant aesthetic). PDF mode switches to a print-ready light theme converted server-side via headless Edge. Every claim is cited; in-text citations are clickable anchors to the references list, and reference URLs link to the original article. Detection content is marked **DRAFT**.
-
-![SkillCTI launcher — the CTI Reports tab showing the monthly briefs (Strategic / Tactical / Operational × AU / Global) and long-horizon sector deep-dives as click-to-run cards, with the sidebar navigation, theme toggle, and search affordance](screenshots/launcher.png)
-
-## Two ways to use these skills
-
-**A. Claude Code slash commands.** Install the skill folders into `~/.claude/skills/` and invoke any skill from a Claude Code session with `/<skill-name>`.
-
-**B. SkillCTI (browser launcher).** A full-stack local web app in `skill-cti/` — React 18 + Vite frontend and a FastAPI backend — that exposes every CTI skill as a click-to-run card, plus a free-form CTI Analyst chat, background job system (reports generate server-side and survive closing the browser tab), IOC enrichment, CVE search, domain enumeration, watchlist monitoring, Regional Threat Pulse dashboard, Cmd+K command palette, 7 themes, present mode, and persistent history with filter and sort. Reports auto-save to `skill-cti/reports/` and can be exported as vector PDFs or PowerPoint decks. See `skill-cti/README.md` for the full feature reference and API documentation.
-
-Both paths use the same underlying skill prompts.
+![SkillCTI Dashboard](https://img.shields.io/badge/status-active-brightgreen) ![Python](https://img.shields.io/badge/python-3.11%2B-blue) ![React](https://img.shields.io/badge/react-18-61dafb) ![License](https://img.shields.io/badge/license-MIT-green)
 
 ---
 
-## Installation — Claude Code slash commands
+## Features
 
-1. Clone or download this repository.
-2. Copy the skill folders into your Claude Code skills directory:
-   - **macOS / Linux:** `~/.claude/skills/`
-   - **Windows:** `%USERPROFILE%\.claude\skills\`
-3. Restart Claude Code (or open a new session). Each folder name becomes a slash command — e.g. `/cti-stix-export`.
-
-You can also drop individual skills in if you only want a subset.
-
-Invoke any skill by typing `/<skill-name>` followed by the argument it expects. Most accept a URL, a file path, or pasted content.
-
-```
-/threat-actor-profile https://example.com/scattered-spider-report
-/cti-monthly-report-strategic-australia 2026-04
-/cti-daily-brief-global
-/cti-stix-export https://www.mandiant.com/resources/blog/apt29-wineloader
-/cti-attack-navigator APT29
-```
-
-## Installation — SkillCTI
-
-**Prerequisites:** Python 3.11+ and Node.js 18+. An Anthropic API key from [console.anthropic.com](https://console.anthropic.com/).
-
-1. **Backend** — copy the example env file, add your API key, install dependencies, and start the server:
-   ```
-   cd skill-cti/backend
-   cp .env.example .env          # then edit .env and set ANTHROPIC_API_KEY
-   pip install -r requirements.txt
-   python main.py
-   # Backend now running on http://localhost:8765
-   ```
-   Optional enrichment keys (VirusTotal, AbuseIPDB, urlscan.io, Shodan, ThreatFox) can also be added to `.env` — or set them later in the app's Settings page.
-
-2. **Frontend** — install and start the dev server:
-   ```
-   cd skill-cti/app
-   npm install
-   npm run dev
-   # Open http://localhost:5173
-   ```
-
-3. For a **production build** (serves the entire app from the backend on port 8765 with no Node.js needed):
-   ```
-   cd skill-cti/app && npm run build
-   # Then: cd ../backend && python main.py
-   # Open http://localhost:8765
-   ```
-
-Generated reports are auto-saved to `skill-cti/reports/` as HTML, PDF, or PPTX files and surface in the Reports tab.
+| Feature | Description |
+|---|---|
+| **Dashboard** | Home page with stat counters (reports generated, this week, total API spend, backend status), 8-week report activity bar chart, report-types donut, active watchlist alerts, quick-launch skill tiles, recent reports list, recent news feed, skill usage chart, Regional Threat Pulse, and Threat Actor of the Week spotlight |
+| **Regional Threat Pulse** | AI-generated, geography-scoped snapshot of active threat actors, recent incidents, and relevant CVEs — includes a CVE risk profile bar by severity. Requires a region to be set in Settings; refreshable on demand |
+| **Threat Actor of the Week** | AI-generated single-actor spotlight showing aliases, origin, motivation, targets, signature techniques, notable tools, and recent activity — refreshable on demand |
+| **Skills** | AI-powered report generation across CTI reports, on-demand analysis, DFIR, strategy, and TPRM — see Skills section below |
+| **Background Jobs** | Reports generate server-side — close your laptop, let your screen sleep, the job keeps running and appears in the Jobs panel when done |
+| **Scheduled Reports** | Schedule recurring report generation on cron-style intervals — daily briefs, weekly summaries, monthly reports |
+| **IOC Search** | Enrich IPs, domains, hashes, and URLs across VirusTotal, AbuseIPDB, OTX, urlscan.io, Shodan, ThreatFox, MISP, and Hybrid Analysis in one query — with AI-generated triage summary |
+| **Bulk IOC Enrich** | Upload or paste a list of IOCs for batch enrichment with consolidated verdict table |
+| **Malware Intel** | Deep hash analysis via VirusTotal, MalwareBazaar, and Hybrid Analysis — detections, C2 relationships, YARA hits, sandbox verdicts |
+| **CVE Search** | Search and analyse CVEs with AI-generated impact briefs |
+| **Domain Enumeration** | DNS, WHOIS, subdomains, and open-port recon against a target domain |
+| **Credential Exposure** | Identity and credential monitoring — combines HIBP, HudsonRock Cavalier (infostealer logs), LeakIX, and IntelX. Accepts domain or email address |
+| **Ransomware Tracker** | Live ransomware victim feed from ransomware.live — filterable by group, sector, and date |
+| **Threat Actors** | Curated ransomware actor profiles with MITRE ATT&CK TTP mapping |
+| **MITRE ATT&CK** | Offline ATT&CK matrix browser — tactics, techniques, sub-techniques, threat groups, and technique detail. STIX bundle downloaded on startup |
+| **MISP** | Browse events from your local MISP instance, search by keyword, click through IOCs to IOC Lookup, and automatically inject MISP context into all AI-generated reports and Analyst chat |
+| **Cases** | Full case management system — create and track investigations with notes, artifacts (IOCs, hashes, files), status and priority, TLP labels, and tags |
+| **Clients** | Engagement manager — store client profiles with industry, threat context, key assets, and contact details. Client context can be injected into report generation |
+| **PIR** | Priority Intelligence Requirements — define standing collection questions, track findings, and monitor rescan schedules |
+| **Library** | Intelligence library for saving and tagging notes, IOCs, reports, and finished intelligence items for future reference |
+| **Watchlist** | Monitor a list of threat actors and get alerts when new intelligence surfaces; unread alerts surface on the Dashboard |
+| **News Feed** | Aggregated cyber security news from government, media, and research sources with unread tracking; preview of latest articles appears on the Dashboard |
+| **Feeds** | Curated threat intelligence feeds — OTX pulses, Abuse.ch (ThreatFox, MalwareBazaar, URLhaus) |
+| **Analyst** | General-purpose AI chat with CTI context — enriched with live MISP events when connected |
+| **Reports** | Browse, view, and download all previously generated HTML, PDF, and PPTX reports |
+| **Multi-model** | Choose between Haiku (fast), Sonnet (balanced), or Opus (strongest) per generation |
+| **Themes** | 7 built-in colour themes — Dark, Light, Terminal, Slate, Mocha, Midnight, Cyberpunk |
+| **Premium UI** | Vercel/Linear-style dark interface — shadow depth system, enforced type scale, consistent spacing tokens, purple restricted to CTA and active-state roles only |
 
 ---
 
-## SkillCTI features
+## Architecture
 
-SkillCTI is a full-stack local web application with a React frontend (port 5173 in dev, or served from the FastAPI backend at port 8765 in production) and a left sidebar nav with per-tab content.
+```
+skill-cti/                # Repo root
+├── app/                  # React 18 + Vite 6 + TypeScript + Tailwind frontend
+│   └── src/
+│       ├── components/   # Sidebar, LaunchDrawer, StatusDot …
+│       ├── pages/        # Dashboard, Skills, Reports, IOCSearch, CVESearch …
+│       └── lib/          # api.ts, skills.ts, theme.ts, types.ts, generate.ts
+├── backend/              # FastAPI backend (port 8765)
+│   ├── routers/          # One file per feature area
+│   ├── services/         # pdf_export.py, pptx_export.py, style_rule.py
+│   ├── data/             # Seed data (ransomware_actors.json); runtime DBs are gitignored
+│   ├── config.py         # Pydantic settings (reads .env)
+│   ├── main.py           # App entry, router registration, startup hooks
+│   ├── requirements.txt
+│   ├── .env.example      # Environment variable template — copy to .env and fill in
+│   └── .env              # Your local secrets — gitignored, never committed
+├── reports/              # Generated HTML / PDF / PPTX — gitignored, auto-created
+├── skills.js             # Skill catalogue (prompt overrides, input schemas, metadata)
+└── skill-cti.html        # Standalone single-file launcher (no backend required)
+```
 
-### Home dashboard (default landing tab)
+> **Skill prompt files:** The backend looks for skill prompt files in a `skills/` directory one level above this repo (`../skills/`). Clone or symlink your skill prompts there, or update `skills_root` in `backend/config.py` to point to wherever your `SKILL.md` files live.
 
-A 2×2 widget grid:
-
-- **Recent Reports** — the 8 most recent saved reports. Each row shows the skill badge, derived title, and relative time. Click to re-open (HTML in modal, PDF in a new tab). Auto-refreshes whenever a new report is generated.
-- **Daily Cyber News** — top 4 cybersecurity stories from the last 24 hours sourced via web_search across BleepingComputer, The Record, Krebs, Reuters/Bloomberg cyber, CISA/NCSC/ACSC, vendor threat intel and leak-site trackers. Every headline links to the original article. Cached for the day in localStorage (one API call per day) with a manual refresh button.
-- **AU Ransomware Victims** — last 3-5 named Australian victims from ransomware.live, fetched server-side via the proxy's `/ransomware-au` passthrough (calls the public `https://api.ransomware.live/v2/countryvictims/au` endpoint, no API key required). 6-hour cache. Falls back to a friendly placeholder if the upstream API is unreachable.
-- **Quick Ask Analyst** — type a CTI question and press Enter; the dashboard switches to the CTI Analyst tab and sends the question automatically.
-
-### CTI Analyst — chat
-
-A free-form chat with a CTI Support Analyst persona. Use it when you don't know which skill applies, want a quick intel answer, or want a recommendation.
-
-- Answers quick factual questions directly using web_search and cites sources.
-- **Recommends and pre-fills the right skill** when your question maps to a structured deliverable. The reply ends with a launch card containing a `LAUNCH →` button that opens the skill's input drawer with fields already populated from your question.
-- Multi-turn context — full chat history is sent each turn so follow-ups like *"now do the same for the energy sector"* work naturally.
-- Chat is session-only; refresh the page to clear it.
-
-### CTI Reports (9)
-
-Long-form scheduled and sector reports. Three subsections:
-- **Monthly Reports — Australia** (3): operational, tactical, strategic
-- **Monthly Reports — Global** (3): operational, tactical, strategic (optional country/region weighting)
-- **Sector Reports** (2): AU and global long-horizon vertical deep-dives
-- **Daily Briefings** (1): one-page global cyber news brief for the morning commute
-
-### On-Demand CTI (6)
-
-Single-event, ad-hoc, or investigation-driven outputs:
-- **Security Advisory** — exec briefing on a breach, CVE, or cyber event
-- **Threat Actor Profile** — structured actor profile from URL or report
-- **IOC Enrichment** *(launcher only for now — slash-command version in development)* — IR-grade enrichment for IPs, domains, URLs, hashes, with mandatory WHOIS
-- **Admiralty Assessment** — grade an intel report against the NATO Admiralty Code (6×6)
-- **STIX Bundle Export** — extract IOCs and emit STIX 2.1 JSON for MISP / OpenCTI / Sentinel TI
-- **ATT&CK Navigator Layer** — render the ATT&CK matrix inline AND emit a Navigator JSON layer
-
-### DFIR Activities (5)
-
-Investigation, detection engineering, and event-data workflows:
-- **Log Analysis (Sherlog Holmes)** — standalone interactive log triage dashboard (opens in a new tab)
-- **Phishing DFIR** — forensic analysis of a single suspicious email
-- **Detection as Code** — Sigma + KQL detection pack from threat intel
-- **YARA Rule Generator** — DRAFT YARA rules from a report or malware description
-- **Incident Timeline** — chronological UTC + Melbourne local timeline from raw events
-
-### Strategy (3)
-
-Long-form strategic deliverables — program design, threat modelling, and crisis preparation:
-- **Mythos-Ready Assessment** — strategic recommendation report aligned to the CSA / SANS / OWASP "Mythos-Ready Security Program" framework
-- **Threat Model (PASTA)** — seven-stage threat model from a system or architecture description
-- **Tabletop Exercise** — facilitator-ready IR TTX from threat intel
-
-### History
-
-Every report generated through the launcher is auto-saved to `skill-cti/reports/`. The History tab lists them newest-first with badge, derived title, timestamp, file size, and format (HTML or PDF).
-
-**Filter + sort controls** at the top of the tab:
-- Free-text search across title, skill name, badge
-- Category filter — All / Daily briefs / Monthly reports / Sector reports / On-demand CTI / DFIR activities / Imported / Other
-- Format filter — HTML + PDF / HTML only / PDF only
-- Sort — Newest / Oldest / Title A→Z / Title Z→A / Largest / Smallest
-
-Click **OPEN** to re-render any saved report (HTML → modal viewer, PDF → new browser tab). Click **DELETE** to remove the report from disk.
-
-**Drop hand-imported HTML reports** into `skill-cti/reports/` and the proxy auto-adopts orphan `.html` files on the next list refresh, using the filename as the title and the file mtime as the timestamp. Imported reports get a grey `IMPORTED` badge to distinguish them.
-
-### Cmd+K command palette
-
-Press **Cmd+K** (Mac) or **Ctrl+K** (Windows), or click the **SEARCH** button in the sidebar footer. Fuzzy-search every tab, every skill, every saved report, plus actions (toggle theme, refresh history). Keyboard nav: ↑/↓ to move, Enter to activate, Esc to close.
-
-### Theme toggle
-
-Sidebar footer button toggles between dark (default) and light themes for the launcher chrome. Stored per-browser in localStorage.
-
-### Present mode
-
-Every generated HTML report includes a **▶ PRESENT** button in the top-right of the report. Clicking it puts the report into a fullscreen, larger-typography projection-ready view suitable for in-meeting screen sharing. Esc exits.
-
-The launcher's output modal also has a **▶ PRESENT** button — for older reports without their own button baked in, the launcher injects the presentation styling into the iframe on the fly.
-
-### PDF mode
-
-When you generate a report in the drawer with format set to **PDF**, the flow is:
-
-1. The model produces a print-ready HTML document (light theme, A4, sans-serif, no fixed-position elements, no JavaScript)
-2. The browser ships the HTML to the proxy's `/generate-pdf` endpoint
-3. The proxy runs headless Edge (or Chrome) via `--print-to-pdf` to convert the HTML to a real vector PDF
-4. The PDF is saved to `skill-cti/reports/<id>.pdf` and streamed back to the browser as an automatic download
-5. The PDF appears in the History tab with a `PDF` badge
-
-The result is a true vector PDF (selectable text, crisp at any zoom, true A4 page size) — not a rasterised screenshot.
-
-### Clickable citations
-
-Every report — HTML and PDF — uses a global citation-formatting rule that:
-- Makes every in-text `[n]` superscript a clickable anchor jumping to the corresponding reference entry
-- Makes every reference URL a clickable link opening the source article in a new tab
-
-Works identically in the on-screen HTML view and in the converted PDF (Chromium preserves internal anchors and external links in PDF export).
+The frontend dev server proxies `/api`, `/v1`, `/reports`, and `/skill` to the backend at `http://localhost:8765`, so there is no CORS complexity in development.
 
 ---
 
-## Skill reference
+## Quick Start
 
-The skills below are grouped to mirror the launcher's tabs. Every skill is invokable from Claude Code as `/<skill-name>`.
+### Prerequisites
 
-## CTI Reports
+- Python 3.11+
+- Node.js 18+
+- An [Anthropic API key](https://console.anthropic.com/)
 
-### Daily Briefings (one)
+### 1. Clone
 
-#### `cti-daily-brief-global`
-
-One-page global cybersecurity news brief covering the last 24 hours, optimised for a 3-5 minute morning-commute read. Sections: 3-bullet TLDR, 4-6 top stories with one-line summaries and source citations, CVE Watch with exploitation status, Ransomware Watch for newly-named victims, What-to-Watch for the next 24-48 hours. Pulls from BleepingComputer, The Record, Krebs, Reuters/Bloomberg cyber, CISA/NCSC/ACSC/BSI/ANSSI/JPCERT/ENISA, vendor threat intel, and ransomware leak-site trackers.
-
-```
-/cti-daily-brief-global [YYYY-MM-DD]
-```
-
-### Monthly reports (six)
-
-Six skills produce recurring CTI deliverables for the past 30 days. They differ along two axes:
-
-- **Audience tier** — strategic (executive / board), tactical (SOC manager / threat hunter), or operational (SOC analyst / IR / vuln management).
-- **Geography** — Australia-focused, or global with optional country/region weighting (USA, UK, Germany, Japan, Europe, EMEA, APAC, Five Eyes, etc.).
-
-All six accept an optional `[YYYY-MM]` argument. The global variants additionally accept `[country|region]`.
-
-#### `cti-monthly-report-strategic-australia`
-
-Plain-English board brief for executives, CISOs, and directors. 3-bullet BLUF, by-the-numbers stats, monthly themes with business impact, top 3 vulnerabilities in business terms, ACSC regulatory posture, global trends affecting Australia, board-level recommendations.
-
-```
-/cti-monthly-report-strategic-australia [YYYY-MM]
+```bash
+git clone https://github.com/harriscyb3r/skill-cti.git
+cd skill-cti
 ```
 
-#### `cti-monthly-report-strategic-global`
+### 2. Backend
 
-Same audience and shape as the AU strategic brief, but global — with regulator framing tuned to the supplied country/region (GDPR, NIS2, DORA, CIRCIA, HIPAA, SEC cyber rules, PIPEDA, APPI, NCSC-UK, etc.).
-
-```
-/cti-monthly-report-strategic-global [country|region] [YYYY-MM]
-```
-
-#### `cti-monthly-report-tactical-australia`
-
-Mid-depth report for SOC managers, threat hunters, and security architects. 5-bullet BLUF, Australian incidents with TTP analysis, 5-10 priority CVEs with detection notes, ACSC advisories mapped to Essential Eight and NIST CSF, global actor activity, 5 hunt hypotheses for the coming month. MITRE ATT&CK references throughout.
-
-```
-/cti-monthly-report-tactical-australia [YYYY-MM]
+```bash
+cd backend
+cp .env.example .env
+# Edit .env — add your ANTHROPIC_API_KEY (required) and any optional enrichment keys
+pip install -r requirements.txt
+python main.py
+# Backend now running on http://localhost:8765
 ```
 
-#### `cti-monthly-report-tactical-global`
+### 3. Frontend
 
-Tactical report at global scope. Maps to NIST CSF and (region-appropriate) Essential Eight or CIS Controls; pulls advisories from CISA, NCSC-UK, BSI, ANSSI, CCCS, JPCERT, ENISA, etc.
-
-```
-/cti-monthly-report-tactical-global [country|region] [YYYY-MM]
-```
-
-#### `cti-monthly-report-operational-australia`
-
-Long, dense analyst-grade roundup. 5-bullet BLUF with CVE IDs, Australian incidents with public IOCs and IR timelines, full CVE deep-dive table with patching priorities, every ACSC advisory with affected versions, consolidated IOCs (IPs / domains / hashes), DRAFT Sigma/KQL detection stubs, global tooling and malware shifts.
-
-```
-/cti-monthly-report-operational-australia [YYYY-MM]
+```bash
+cd app
+npm install
+npm run dev
+# Open http://localhost:5173
 ```
 
-#### `cti-monthly-report-operational-global`
-
-Operational roundup at global scope.
-
-```
-/cti-monthly-report-operational-global [country|region] [YYYY-MM]
-```
-
-### Sector reports (long-horizon)
-
-Two skills produce long-horizon CTI reports for a single industry **sector** rather than a calendar month. They synthesise a multi-month horizon (default 12 months) and look for trends, threat-actor targeting patterns, and a forward-looking outlook.
-
-#### `cti-sector-report-australia`
-
-Sector deep-dive for an Australian audience. Maps the chosen sector to its SOCI Act categorisation and weaves SOCI positive security obligations, risk-management programs, and mandatory cyber-incident reporting through the recommendations. Pulls from ACSC, ASD, OAIC, CISC, and the lead sector regulator.
-
-```
-/cti-sector-report-australia <sector> [horizon]
-```
-
-Examples: `/cti-sector-report-australia healthcare`, `/cti-sector-report-australia "food and grocery" 2y`.
-
-#### `cti-sector-report-global`
-
-Same shape, global scope, with optional country/region weighting. Regulatory framing switches to the appropriate regime (NIS2 / DORA, HIPAA / SEC / NYDFS / NERC CIP, FCA / PRA, BaFin, MAS TRM, OSFI, etc.). Sector ISAC sources pulled in.
-
-```
-/cti-sector-report-global <sector> [country|region] [horizon]
-```
+That's it. Open the app, go to **Settings**, and your API keys are already loaded from `.env`.
 
 ---
 
-## On-Demand CTI
+## Environment Variables
 
-Single-event, ad-hoc, or investigation-driven outputs.
+Copy `backend/.env.example` to `backend/.env` and fill in the values.
 
-### `cti-security-advisory`
+| Variable | Required | Description |
+|---|---|---|
+| `ANTHROPIC_API_KEY` | **Yes** | Claude API key from [console.anthropic.com](https://console.anthropic.com/) |
+| `VIRUSTOTAL_API_KEY` | No | IOC enrichment — file hashes, URLs, IPs, malware intel |
+| `ABUSEIPDB_API_KEY` | No | IOC enrichment — IP reputation |
+| `URLSCAN_API_KEY` | No | IOC enrichment — URL and domain analysis |
+| `SHODAN_API_KEY` | No | IOC enrichment — port/banner data for IPs |
+| `THREATFOX_API_KEY` | No | IOC enrichment — Abuse.ch ThreatFox database |
+| `HYBRID_ANALYSIS_API_KEY` | No | IOC enrichment and malware intel — sandbox reports |
+| `HIBP_API_KEY` | No | Credential exposure — domain breach counts (paid HIBP API) |
+| `INTELX_API_KEY` | No | Credential exposure — dark web search via IntelX |
+| `OTX_API_KEY` | No | Threat feeds — AlienVault OTX pulses |
+| `IPINFO_API_TOKEN` | No | IOC enrichment — IP geolocation and ASN data |
+| `PROXYCHECK_API_KEY` | No | IOC enrichment — VPN/proxy/anonymizer detection |
+| `MISP_URL` | No | Base URL of your MISP instance (e.g. `https://localhost`) |
+| `MISP_API_KEY` | No | MISP automation key — enables event browsing, IOC enrichment, and report context injection |
+| `DEFAULT_TLP` | No | Default TLP label on reports (default: `TLP:AMBER`) |
+| `GEOGRAPHY` | No | Your region for the Regional Threat Pulse (e.g. `Australia`, `APAC`, `United Kingdom`) |
 
-Short, decision-oriented executive briefing for a single newsworthy event — a major breach, a zero-day, an actively-exploited CVE, a supply-chain compromise, a high-profile ransomware incident, or a regulatory action. One to two pages of plain-English HTML for a CEO / CFO / GC / board member / peer CISO. Structured around **decisions**, not analysis.
-
-```
-/cti-security-advisory <URL, CVE ID, or event name> [country|region]
-```
-
-### `threat-actor-profile`
-
-Structured threat actor profile from a URL or attached document. BLUF, actor metadata, Diamond Model overlay, MITRE ATT&CK TTPs, IOCs, targeted sectors and geographies, SOCI Act relevance, recommended detections.
-
-```
-/threat-actor-profile <URL or filename>
-```
-
-### `cti-ioc-enrich` — in development
-
-Fast-turn IOC enrichment for incident response — IPv4/IPv6, domains, URLs, and file hashes, with mandatory WHOIS plus VirusTotal, AbuseIPDB, urlscan.io, Spur, Shodan, GreyNoise, Talos, MalwareBazaar, and public sandbox lookups.
-
-**Available today** via the SkillCTI launcher (On-Demand CTI tab → IOC Enrichment). The standalone slash-command version is in active development and will return in a future release — track the issue tracker or the repo CHANGELOG for the ship date.
-
-### `cti-admiralty-assessment`
-
-Quality-assesses a CTI report using the NATO Admiralty Code (6×6). Extracts each major claim, identifies cited source, grades source reliability A–F and information credibility 1–6, flags single-sourced or unverifiable claims, gives an overall report grade with recommendations to strengthen tradecraft.
-
-```
-/cti-admiralty-assessment <URL or pasted report>
-```
-
-### `cti-stix-export`
-
-Extracts every IOC from a threat intel source (URL, pasted report, or IOC list) and emits a valid STIX 2.1 JSON bundle ready for import into MISP, OpenCTI, Anomali ThreatStream, Microsoft Sentinel TI, ThreatConnect, ThreatQuotient, Recorded Future, IBM SIRP, or EclecticIQ. Builds proper STIX SDOs (indicator, threat-actor, intrusion-set, malware, campaign, identity, marking-definition) and SROs (relationship) with valid STIX patterns and TLP markings. Output is a dark-themed HTML viewer wrapping the bundle, with a one-click `.json` download.
-
-```
-/cti-stix-export <URL or pasted report>
-```
-
-### `cti-attack-navigator`
-
-Extracts MITRE ATT&CK techniques from a threat report, actor profile, or TTP list and **(1)** renders a visual ATT&CK matrix inline in the HTML report — tactic columns with colour-coded technique cells per score — so you see the heatmap immediately, and **(2)** also emits a valid Navigator JSON layer file you can download and upload to attack-navigator.mitre.org for the full official matrix view, gap analysis, and stack comparison.
-
-```
-/cti-attack-navigator <URL · actor name · TTP list>
-```
+API keys can also be set or updated at runtime via the **Settings** page in the UI.
 
 ---
 
-## DFIR Activities
+## MISP Integration
 
-Investigation, detection engineering, and exercise-prep workflows.
+MISP (Malware Information Sharing Platform) is an open-source threat intelligence platform. When connected, SkillCTI:
 
-### `log-analysis` — Sherlog Holmes dashboard
+- Displays your MISP events in the **MISP** page with search and drill-down
+- Enriches IOC lookups with matching MISP attributes and event context
+- Injects relevant MISP intelligence into all AI-generated reports and Analyst chat
 
-Standalone interactive log-triage dashboard. Unlike the slash-command skills, this is a self-contained browser app with its own proxy. Lives in `log-analysis/`. Supports multi-file log upload, severity filtering, source filtering, IP correlation across files, AI-assisted summarisation.
+### Installing MISP with Docker
 
-**Launch:** click the *Log Analysis* card in the SkillCTI **DFIR Activities** tab to open in a new tab, or open `log-analysis/siem-dashboard.html` directly with `python log-analysis/proxy.py` running.
+The easiest way to run a local MISP instance is with the official Docker Compose setup.
 
-### `dfir-phishing-analysis`
+**Prerequisites:** Docker Desktop (Windows/Mac) or Docker Engine + Docker Compose (Linux)
 
-Full DFIR analysis of a single suspicious or confirmed phishing email. Accepts `.eml`, `.msg`, pasted headers + body, screenshot, or URL to a published phishing report. Performs full header analysis (SPF / DKIM / DMARC), sender infrastructure enrichment with lookalike-domain detection, URL redirect-chain unrolling, attachment hashing with sandbox lookup, lure / brand-impersonation analysis, phishing-kit / PhaaS identification (EvilProxy / Tycoon 2FA / Mamba2FA / etc.), campaign attribution, victim-impact assessment, banded containment actions, region-aware abuse reporting (ACSC / IC3 / NCSC / national CERT), and DRAFT Sigma / KQL detection stubs.
+```bash
+# 1. Clone the official MISP Docker repository
+git clone https://github.com/MISP/misp-docker.git
+cd misp-docker
 
-```
-/dfir-phishing-analysis <.eml file, pasted headers/body, screenshot, or URL> [country|region]
-```
+# 2. Copy the example environment file
+cp template.env .env
 
-### `cti-detection-as-code`
+# 3. Edit .env — set MISP_BASEURL to match where you'll access it
+#    For local use:
+#    MISP_BASEURL=https://localhost
+#    Change MYSQL_PASSWORD and MISP_ADMIN_PASSPHRASE to something secure
 
-Converts a threat actor profile, threat report, or TTP list into reviewable detection content — Sigma rules (SigmaHQ-spec YAML) and Microsoft Sentinel / Defender KQL — tagged with technique IDs and traced back to source.
+# 4. Start MISP
+docker compose up -d
 
-```
-/cti-detection-as-code <URL, filename, or comma-separated TTPs>
-```
-
-### `cti-yara-generator`
-
-DRAFT YARA rules from a malware family description, threat intel report, or sample analysis. Each rule has a full meta block (description, author, date, version, reference, malware_family, mitre_attack, severity, confidence, status DRAFT, tlp), distinctive ASCII / Unicode / hex strings, robust conditions using file-type pre-filters, count thresholds, and the `pe` module where appropriate. Produces multiple narrow-focus rules per family (strings rule, bytes / opcodes rule, PE structure rule, behavioural rule, config rule) rather than one over-broad rule. Output is an HTML viewer with one card per rule, full source in copy-on-click code blocks, false-positive notes, tuning guidance, MITRE tags, and a one-click download of the combined `.yar` file.
-
-```
-/cti-yara-generator <URL · report · malware analysis> [family name]
-```
-
-### `dfir-incident-timeline`
-
-Consolidates raw events (paste logs, IR notes, CSV slices, SIEM exports) into a chronological incident timeline. Every event shown in **TWO** timestamp columns: **UTC** and **Melbourne local time** (AEST UTC+10 / AEDT UTC+11, DST-aware — first Sunday in October jumps forward, first Sunday in April falls back). Each event classified into MITRE-aligned phases, tagged with confidence (high/medium/low), flagged with anomaly callouts (out-of-hours uses Melbourne local, geographically unusual, defender-bypass, first-of-kind). Includes dwell-time calculation, gap analysis showing tactics with no observed events plus hunt-hypothesis suggestions, a visual swimlane, and a downloadable CSV.
-
-```
-/dfir-incident-timeline <raw events — paste, file path, or csv> [incident name] [time-zero anchor]
+# 5. Wait ~2-3 minutes for first-run initialisation, then open:
+#    https://localhost
+#    Default admin email: admin@admin.test
+#    Default admin password: set in .env (MISP_ADMIN_PASSPHRASE)
 ```
 
-### `bas-red-team-simulation`
+> **Note:** MISP uses a self-signed certificate by default. Your browser will warn you — accept the exception. SkillCTI's backend skips TLS verification for MISP connections automatically (`verify=False`).
 
-Produces a structured Breach and Attack Simulation (BAS) and red team campaign plan from a target description, organisational profile, security stack, or architecture document. Simulates the written output of commercial BAS platforms (Cymulate, AttackIQ, SafeBreach, Picus Security): campaign playbooks with kill chain narratives, atomic test cases mapped to MITRE ATT&CK, per-control-layer effectiveness ratings (BLOCKED / ALERTED / LOGGED / MISSED), detection coverage heatmap, overall security posture score, and a prioritised remediation roadmap. Every assumption explicitly labelled.
+**Checking status:**
 
-Supports any input form: organisation name, architecture URL, explicit security stack, or a description of the target environment. If a real organisation is named it will search for their public stack and industry context before building the plan.
-
-```
-/bas-red-team-simulation <target description | org name | industry | architecture URL | filename>
-```
-
-Examples:
-- `/bas-red-team-simulation "mid-size Australian bank"` — full kill chain plan with inferred stack
-- `/bas-red-team-simulation "Defender for Endpoint, Sentinel, Proofpoint, Palo Alto"` — plan against a specific stack
-- `/bas-red-team-simulation https://example.com/architecture.pdf` — plan from an architecture document
-
-**Output:** a single self-contained dark-themed HTML report with playbook cards, inline MITRE ATT&CK coverage matrix, control effectiveness gauges, result status badges, and a remediation priority board.
-
-> **Note:** this skill is available as a Claude Code slash command. It is not yet integrated into the SkillCTI browser launcher.
-
-### `dfir-ir-playbook`
-
-Generates a comprehensive, operator-ready Incident Response Playbook for a specific attack type or a full interactive suite of all attack types in one HTML file. Aligned to the **NIST SP 800-61r3** IR lifecycle (Preparation, Detection and Analysis, Containment, Eradication, Recovery, Post-Incident Activity). Supported attack types: **Ransomware**, **Phishing/Credential Harvest**, **Business Email Compromise (BEC)**, **Insider Threat**, **Data Breach/Exfiltration**, **Supply Chain Compromise**, **Web Application Attack**, **Credential Stuffing/Account Takeover**, **Malware Infection**, **DDoS**, **Social Engineering**, **Zero-Day Exploitation**.
-
-Output is a single self-contained dark-themed interactive HTML with a **dropdown attack-type selector**, phase-by-phase **checkbox task lists** (with localStorage persistence across page reloads), **decision trees**, escalation paths, **communication templates** (copy-on-click), **evidence preservation checklists**, regulatory notification guidance, **MITRE ATT&CK TTP mapping**, an **incident tracking panel** (ID, severity, elapsed timer), tooling references, and a JSON state export. Designed to complement pre-existing IR plans.
-
-```
-/dfir-ir-playbook [attack type | 'all'] [organisation context] [region]
+```bash
+docker compose ps          # All containers should show "running"
+docker compose logs -f     # Follow startup logs
 ```
 
-Examples:
-- `/dfir-ir-playbook ransomware` — focused ransomware playbook
-- `/dfir-ir-playbook bec AU` — BEC playbook with AU regulatory framing
-- `/dfir-ir-playbook all` — full interactive suite with all 12 attack types, dropdown-selectable
-- `/dfir-ir-playbook insider threat "ASX-listed, M365, hybrid Azure"` — tailored insider threat playbook
+**Stopping and starting:**
+
+```bash
+docker compose stop        # Stop containers (data preserved)
+docker compose start       # Restart
+docker compose down        # Stop and remove containers (data preserved in volumes)
+docker compose down -v     # ⚠️ Removes all data including events
+```
+
+### Creating a MISP API Key
+
+1. Log in to your MISP instance at `https://localhost`
+2. Click your username in the top-right corner → **My Profile**
+3. Scroll down to the **Auth keys** section
+4. Click **Add authentication key**
+5. Set an optional comment (e.g. `SkillCTI`) and expiry, then click **Submit**
+6. **Copy the generated key immediately** — it is only shown once
+
+### Connecting MISP to SkillCTI
+
+**Option A — via `.env` (recommended for persistent setup):**
+
+```env
+MISP_URL=https://localhost
+MISP_API_KEY=your_automation_key_here
+```
+
+Restart the backend after editing `.env`.
+
+**Option B — via the Settings page:**
+
+1. Open SkillCTI → **Settings**
+2. Paste your MISP URL (e.g. `https://localhost`) and API key into the MISP fields
+3. Click **Save** — the connection is tested immediately and the status dot in the sidebar updates
+
+The sidebar shows a green MISP indicator when the connection is healthy.
 
 ---
 
-## Strategy
+## Skills
 
-Long-form strategic deliverables — program design, architectural risk, and crisis preparation. The skills below mirror the launcher's **Strategy** tab.
+Skills are prompt templates that drive report generation. Each skill lives in its own directory under the repo root (e.g. `cti-tabletop/SKILL.md`) and is registered in `app/src/lib/skills.ts`.
 
-### `cti-mythos-ready-assessment`
+### CTI Reports
 
-Produces a client-deliverable strategic recommendation report based on the CSA / SANS / OWASP **"Mythos-Ready Security Program"** framework (the industry response to Anthropic's Claude Mythos autonomous-offensive capabilities — 181 Firefox 0-days, 72% exploit success rate, end-to-end 32-step attack chains, sub-$2k exploit cost floor).
+| Skill | Description |
+|---|---|
+| **Daily Brief (Global)** | One-page global cyber news brief covering the last 24 hours — TLDR bullets, top stories, CVE watch, ransomware watch |
+| **Operational CTI** | Dense monthly brief for SOC/IR/vuln management — CVE deep-dives, IOC table, DRAFT Sigma/KQL detection stubs. AU or Global mode |
+| **Tactical CTI** | Mid-depth monthly for practitioners — BLUF, incidents with TTP analysis, priority CVEs, hunt hypotheses. AU or Global mode |
+| **Strategic CTI** | Plain-English board brief — exec summary, monthly themes, top vulnerabilities in business terms, regulatory posture. AU or Global mode |
+| **Sector Report** | Multi-month sector intelligence — threat actor landscape, incidents, TTP trends, supply-chain risks, regulatory posture. AU or Global mode |
 
-Assesses an organisation against the 5 Mythos-Ready pillars (AI-driven defensive capabilities, accelerated VulnOps, hardened core controls, updated risk models, cross-industry coordination) and the 5 operational steps (continuous deterministic asset discovery, ruthless risk filtering, attack path analysis, adversarial exposure validation, agentic remediation governance). Maps gaps to NIST CSF 2.0, CCM v4, ISO/IEC 27001:2022, NIST AI RMF, and region-specific obligations (Essential Eight + SOCI for AU; CIRCIA + SEC for US; NIS2 + DORA + EU AI Act; NCSC CAF for UK). Outputs a phased 30 / 90 / 180 / 365-day uplift roadmap with quick wins, investment priorities, tooling categories, FTE estimates, framework mapping table, and board-level talking points.
+### On-Demand CTI
 
-**Use when:** a CISO / CIO / board needs a defensible strategic plan for AI-accelerated vulnerability discovery, or a consulting team needs a client-ready Mythos-readiness assessment to drive a budget discussion.
+| Skill | Description |
+|---|---|
+| **Security Advisory** | Client-deliverable executive advisory on any cyber event, CVE, or breach |
+| **Threat Actor Profile** | Structured actor profile using the Diamond Model — TTPs, campaigns, infrastructure, victimology, IOCs |
+| **Detection as Code** | Sigma rules + Sentinel/Defender KQL from a threat report or TTP list — all rules marked DRAFT |
+| **YARA Rule Generator** | DRAFT YARA rules from malware analysis, vendor reports, or sample writeups |
+| **ATT&CK Navigator Layer** | Extracts MITRE techniques from a report and renders inline ATT&CK matrix + Navigator JSON layer export |
+| **Admiralty Assessment** | Quality-assesses a CTI report using the NATO Admiralty Code (6×6 source/information grading) |
+| **STIX Bundle Export** | Parses a threat intel source, extracts IOCs, and emits a valid STIX 2.1 bundle for MISP/OpenCTI/Sentinel TI |
 
-**Invoke:**
-```
-/cti-mythos-ready-assessment <organisation context — sector, size, current maturity, key concerns> [region]
-```
+### DFIR
 
-Examples:
-- `/cti-mythos-ready-assessment "ASX-listed financial services, ~3,000 staff, Essential Eight ML2, hybrid Azure + on-prem" AU`
-- `/cti-mythos-ready-assessment "US mid-market healthcare, 800 staff, NIST CSF managed, all-cloud" US`
+| Skill | Description |
+|---|---|
+| **Phishing DFIR** | Full forensic analysis of a phishing email — headers, infrastructure, URL chains, attachment lookups, campaign attribution |
+| **Incident Timeline** | Consolidates raw events into a chronological UTC + local time incident timeline with phase classification |
+| **IR Playbook Generator** | NIST 800-61r3 operator playbooks for 13 attack types — phase-by-phase checklists, decision trees, escalation paths, comms templates |
+| **Log Analysis (Sherlog Holmes)** | Interactive SIEM-style log dashboard for triage — file upload, severity filters, IP correlation, AI summarisation |
 
-**Output:** a 10-12 page HTML report with executive summary, current-state gap analysis, pillar-by-pillar recommendations, identity hardening roadmap, phased 30/90/180/365-day timeline, investment profile with FTE estimates, governance and board talking points, framework mapping table, and a UK AISI "stronger execution of basics" anchor that keeps the report grounded.
+### Strategy
 
-### `cti-threat-model`
+| Skill | Description |
+|---|---|
+| **Threat Model** | PASTA or STRIDE threat model — inline SVG DFD, ATT&CK/CWE/CAPEC mappings, threat register with heatmap, NIST CSF 2.0 mitigations |
+| **Tabletop Exercise (TTX)** | Facilitator-ready IR tabletop — 6 phased injects, facilitator notes, discussion questions, AU regulatory triggers |
+| **BAS / Red Team Plan** | Breach and attack simulation campaign plan — 6–8 attack playbooks, atomic test cases, control-layer effectiveness matrix, MITRE coverage heatmap |
+| **Mythos-Ready Assessment** | Strategic readiness assessment for AI/agent deployment — risk register, priority actions, 90-day board template |
 
-PASTA threat model from a PDF or URL describing an application, system, or architecture. Walks all seven PASTA stages — Define Objectives, Define Technical Scope, Application Decomposition, Threat Analysis, Vulnerability and Weakness Analysis, Attack Modeling, Risk and Impact Analysis. Output includes inline SVG data flow diagram, MITRE ATT&CK / CAPEC mappings, attack trees, risk register heat map, prioritised controls mapped to ASD Essential Eight and ISM, and Australian regulatory context (SOCI Act, OAIC, APRA CPS 234).
+### TPRM
 
-```
-/cti-threat-model <URL or filename>
-```
+| Skill | Description |
+|---|---|
+| **Vendor Risk Intelligence** | Third-party risk report for a vendor list — CVEs, CISA KEV hits, breach history, enforcement actions, media signals, 2×2 risk matrix |
 
-### `cti-tabletop`
+### Output Formats
 
-Facilitator-ready IR Tabletop Exercise from a threat intel input. Six phased injects: initial detection, triage and escalation, containment decision, eradication and investigation, recovery and communications, and hot-wash. Australian regulatory triggers baked in (ACSC, SOCI Act, OAIC NDB, APRA CPS 234).
+- **HTML** — dark editorial report, saved to the Reports page, viewable in-browser with a **PRESENT** mode for projector delivery
+- **PDF** — A4 print-ready brief, auto-downloaded on completion
+- **PPTX** — Professional PowerPoint deck with visual slide types (stats, callouts, highlights, timelines, agendas, two-column layouts), auto-downloaded on completion
 
-```
-/cti-tabletop <URL or filename> [duration e.g. 2h]
-```
+### Adding a New Skill
 
----
-
-## Skill catalogue at a glance
-
-| Tab | Skill | Slash command |
-| --- | --- | --- |
-| CTI Reports | Daily Brief (Global) | `/cti-daily-brief-global` |
-| CTI Reports | Strategic AU monthly | `/cti-monthly-report-strategic-australia` |
-| CTI Reports | Strategic global monthly | `/cti-monthly-report-strategic-global` |
-| CTI Reports | Tactical AU monthly | `/cti-monthly-report-tactical-australia` |
-| CTI Reports | Tactical global monthly | `/cti-monthly-report-tactical-global` |
-| CTI Reports | Operational AU monthly | `/cti-monthly-report-operational-australia` |
-| CTI Reports | Operational global monthly | `/cti-monthly-report-operational-global` |
-| CTI Reports | AU sector deep-dive | `/cti-sector-report-australia` |
-| CTI Reports | Global sector deep-dive | `/cti-sector-report-global` |
-| On-Demand CTI | Security Advisory | `/cti-security-advisory` |
-| On-Demand CTI | Threat Actor Profile | `/threat-actor-profile` |
-| On-Demand CTI | Admiralty Assessment | `/cti-admiralty-assessment` |
-| On-Demand CTI | STIX Bundle Export | `/cti-stix-export` |
-| On-Demand CTI | ATT&CK Navigator Layer | `/cti-attack-navigator` |
-| DFIR Activities | Log Analysis dashboard | *(open `log-analysis/siem-dashboard.html`)* |
-| DFIR Activities | Phishing DFIR | `/dfir-phishing-analysis` |
-| DFIR Activities | Detection as Code | `/cti-detection-as-code` |
-| DFIR Activities | YARA Rule Generator | `/cti-yara-generator` |
-| DFIR Activities | Incident Timeline | `/dfir-incident-timeline` |
-| DFIR Activities | BAS / Red Team Plan | `/bas-red-team-simulation` |
-| DFIR Activities | IR Playbook Generator | `/dfir-ir-playbook` |
-| Strategy | Mythos-Ready Assessment | `/cti-mythos-ready-assessment` |
-| Strategy | Threat Model (PASTA) | `/cti-threat-model` |
-| Strategy | Tabletop Exercise | `/cti-tabletop` |
-
-**25 skills total** — 24 slash commands plus the standalone Log Analysis dashboard. The launcher's CTI Analyst chat sits across all of them as a discoverability and routing layer.
+1. Create a directory `skills/cti-yourskill/` (in the repo root `skills/` folder) containing a `SKILL.md` that describes the skill's content requirements and HTML/output structure
+2. Register it in `app/src/lib/skills.ts` following the existing pattern
+3. Restart the frontend dev server — the skill appears in the Skills gallery immediately
 
 ---
 
-## Repository layout
+## Background Job System
 
-```
-skills/
-├── README.md
-├── LICENSE
-├── _lib/                           ← shared prompt specs (report-spec.md, report-sources.md)
-├── skill-cti/                      ← the browser launcher (React 18 + FastAPI)
-│   ├── app/                        ← Vite + TypeScript frontend (npm run dev → :5173)
-│   │   └── src/
-│   │       ├── components/
-│   │       ├── pages/
-│   │       └── lib/
-│   ├── backend/                    ← FastAPI backend (python main.py → :8765)
-│   │   ├── routers/
-│   │   ├── services/
-│   │   ├── data/
-│   │   ├── main.py
-│   │   ├── requirements.txt
-│   │   └── .env.example
-│   └── reports/                    ← auto-saved reports — gitignored, .gitkeep committed
-├── log-analysis/                   ← standalone Sherlog Holmes log dashboard
-│   ├── siem-dashboard.html
-│   └── proxy.py
-├── cti-daily-brief-global/         ← each of these folders is a Claude Code slash command
-├── cti-monthly-report-strategic-australia/
-├── cti-monthly-report-strategic-global/
-├── cti-monthly-report-tactical-australia/
-├── cti-monthly-report-tactical-global/
-├── cti-monthly-report-operational-australia/
-├── cti-monthly-report-operational-global/
-├── cti-sector-report-australia/
-├── cti-sector-report-global/
-├── cti-security-advisory/
-├── threat-actor-profile/
-├── cti-admiralty-assessment/
-├── cti-stix-export/
-├── cti-attack-navigator/
-├── cti-mythos-ready-assessment/
-├── dfir-phishing-analysis/
-├── cti-detection-as-code/
-├── cti-threat-model/
-├── cti-tabletop/
-├── cti-yara-generator/
-├── dfir-incident-timeline/
-├── dfir-ir-playbook/
-└── bas-red-team-simulation/
-```
+All report generation runs **server-side** as an asyncio background task. The browser is only used to submit the job and poll for status — closing the tab, sleeping the laptop, or losing the network connection does not interrupt generation.
 
-Each slash-command folder contains a single `SKILL.md` file with frontmatter (`name`, `description`, `allowed-tools`, `argument-hint`) and a prompt body.
+- Jobs persist to disk (`reports/_job-{id}.json`) and survive a backend restart
+- The **Jobs** panel shows live progress with a character count and estimated completion
+- Completed jobs link directly to the report viewer (HTML) or trigger a download (PDF/PPTX)
+- The sidebar shows an animated badge with the count of active jobs
 
 ---
 
-## Notes
+## Report Viewer
 
-- Every skill writes its output as a **single self-contained HTML file** — no external CSS, JS, or image dependencies. You can email, archive, or host the file as-is. PDF mode produces a real vector PDF via headless Edge / Chrome.
-- All citations link back to the original source. If a claim can't be cited, it's flagged as an assumption. In-text `[n]` superscripts are clickable anchors to the references list; reference URLs are clickable links to the source.
-- Detection content (Sigma, KQL, YARA) is **DRAFT**. Tune log sources, field names, and thresholds for your environment before deploying.
-- Australian-flavoured skills assume an ANZ critical-infrastructure context (SOCI Act, ACSC, OAIC NDB, APRA CPS 234, ASD Essential Eight). Global variants swap in the appropriate regional frameworks.
-- The **SkillCTI launcher** and the **slash commands** use the same underlying skill prompts. The launcher adds a full React + FastAPI application with background job generation, PDF and PPTX export, IOC enrichment, CVE search, domain enumeration, watchlist monitoring, Regional Threat Pulse dashboard, multi-model selection, 7 themes, Cmd+K command palette, present mode, and the CTI Analyst chat. The slash commands integrate with Claude Code's filesystem and IDE awareness. See `skill-cti/README.md` for the complete feature reference.
+HTML reports render in a full-screen panel with:
+- A sticky sidebar table-of-contents with scroll-spy
+- Citation superscripts `[n]` linked to a references section
+- A **PRESENT** button (top-right) that enters a projector-optimised fullscreen view with larger type
+
+---
+
+## UI Design System
+
+The frontend enforces a set of conventions across all pages and components. Follow these when adding new views.
+
+### Typography
+
+| Role | Size / Weight | Font |
+|---|---|---|
+| Page title | 22px / 700 | Inter (`font-sans`) |
+| Card heading | 14–15px / 600 | Inter |
+| Body text | 13px / 400 | Inter |
+| Section labels | 11px / 500, `uppercase tracking-[0.2em]`, `text-txt-3` | Inter |
+| Data identifiers | 10px / 700 | IBM Plex Mono (`font-mono`) |
+
+`font-mono` is **only** for data values: IOC values, CVE IDs, hashes, ATT&CK IDs, CVSS vectors, TLP badges, timestamps, and code blocks. All UI chrome uses `font-sans`.
+
+**Size floor:** never go below 11px for UI text or 10px for `font-mono` data values. For small labels and badges, compensate with weight and `tracking-*` instead of shrinking. Inter's optical features (`cv11`, `ss01`, `ss03`), `-0.011em` letter-spacing, and `tabular-nums` are applied globally in `index.css`.
+
+### Colours
+
+Tailwind CSS variable-based theming via CSS custom properties. Key tokens: `bg`, `surface`, `surface2`, `border`, `border2`, `txt`, `txt-2`, `txt-3`, `purple`, `cyan`, `green`, `red`, `amber`.
+
+**Purple is restricted to two roles only:**
+1. CTA / primary actions — gradient buttons, focus rings, toggle active, loading spinners
+2. Active / selected state — `border-l-purple`, `bg-purple/[0.08]`, active nav items, unread badges
+
+Do not use purple for hover effects, decorative tags, icon tints, or data badges.
+
+### Shadows
+
+| Token | Usage |
+|---|---|
+| `shadow-card` | Every `bg-surface` card — adds depth + inset top highlight (dark) or soft drop shadow (light) |
+| `shadow-elevated` | Drawers, panels, and overlays that float above the base surface |
+
+### Border radius
+
+- `rounded-lg` (8px) — cards and panels
+- `rounded-md` (6px) — inputs and secondary controls
+- `rounded-sm` (4px) — badges and pills
+
+### Spacing
+
+Four tokens cover all spacing needs:
+
+| Token | Size | Use |
+|---|---|---|
+| `p-3` / `gap-3` / `mb-3` | 12px | Tight inline groups (icon+label, section label → content) |
+| `p-4` / `gap-4` / `mb-4` | 16px | Card internal padding, between related items |
+| `p-6` / `gap-6` / `mb-6` | 24px | Page outer padding, between major sections |
+| `p-8` / `gap-8` / `mb-8` | 32px | Sparse hero areas |
+
+Avoid arbitrary values (`p-[26px]`, `mb-[14px]`, etc.).
+
+---
+
+## Development
+
+### Frontend build
+
+```bash
+cd app
+npm run build   # Outputs to app/dist/
+```
+
+The backend serves `app/dist/` as static files in production (`/`), so a single `python main.py` runs the whole stack.
+
+### Backend
+
+The FastAPI backend auto-reloads in development if you run:
+
+```bash
+cd backend
+uvicorn main:app --reload --port 8765
+```
+
+### Proxy config
+
+`app/vite.config.ts` proxies these paths to `http://localhost:8765`:
+- `/api` — backend API
+- `/v1` — Anthropic proxy endpoint
+- `/reports` — report file serving
+- `/skill` — skill prompt file serving
+- `/generate-pdf`, `/generate-pptx` — export endpoints
+
+---
+
+## Security Notes
+
+- The backend exposes your Anthropic API key through its proxy — **do not expose port 8765 to the internet**. Run locally or behind authentication if deployed.
+- Generated reports may contain sensitive intelligence. The `reports/` directory is gitignored; treat its contents as TLP:AMBER or higher by default.
+- All enrichment API keys are stored in `backend/.env` which is gitignored. Never commit this file.
+
+---
+
+## Contributing
+
+Pull requests welcome. Please open an issue first for significant changes.
+
+1. Fork the repo
+2. Create a feature branch (`git checkout -b feature/my-skill`)
+3. Commit your changes
+4. Push and open a PR
+
+---
 
 ## License
 
-See `LICENSE` in the repository root.
+MIT — see [LICENSE](LICENSE) for details.

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Monthly Threat Landscape — Australia</title>
+<style>
+@page{size:A4;margin:20mm 20mm 20mm 16mm}
+*{box-sizing:border-box}
+body{font-family:'Helvetica Neue',Arial,'Segoe UI',sans-serif;font-size:10pt;line-height:1.45;
+  color:#1a1a1a;background:#fff;max-width:100%;overflow-x:hidden;margin:0;orphans:3;widows:3}
+h1{font-size:24pt;font-weight:700;margin:0 0 6pt;color:#1a1a1a}
+h2{font-size:14pt;font-weight:700;color:#1a1a1a;margin-top:18pt;
+  page-break-after:avoid;page-break-inside:avoid}
+h3{font-size:11pt;font-weight:700;color:#1e40af;margin-top:12pt;page-break-after:avoid}
+h4{font-size:10pt;font-weight:700;margin-top:10pt}
+p{margin:6pt 0}
+a{color:#1e40af;text-decoration:underline}
+hr{border:0;border-top:.5pt solid #d4d4d8;margin:10pt 0}
+.title-block{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12pt}
+.tb-left{flex:1 1 60%}
+.tb-right{max-width:25%;text-align:right}
+.subtitle{font-size:10pt;color:#6b7280;margin:4pt 0 0}
+.tlp-pill{display:inline-block;color:#ea580c;border:1pt solid #ea580c;background:#fff;
+  padding:4px 10px;font-weight:700;text-transform:uppercase;font-size:9pt}
+.audience{font-size:9pt;color:#6b7280;text-transform:uppercase;margin-top:6pt}
+.title-rule{border:0;border-top:1pt solid #1a1a1a;margin:10pt 0 14pt}
+table{width:100%;table-layout:auto;word-break:break-word;border-collapse:collapse;margin:8pt 0}
+th{font-size:9pt;text-transform:uppercase;text-align:left;color:#1a1a1a;
+  border-bottom:.5pt solid #d4d4d8;padding:5pt 8pt}
+td{padding:5pt 8pt;border-bottom:.5pt solid #e4e4e7;vertical-align:top}
+tr{page-break-inside:avoid}
+pre{background:#f7f7f8;border:.5pt solid #d4d4d8;padding:8pt 10pt;font-size:8.5pt;
+  font-family:Menlo,Consolas,monospace;white-space:pre-wrap;word-break:break-word}
+code{font-family:Menlo,Consolas,monospace;font-size:9pt}
+sup.cite a{color:#b91c1c;font-weight:700;text-decoration:none}
+sup.cite{color:#b91c1c;font-weight:700}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(90pt,1fr));gap:14px;
+  border-top:.5pt solid #d4d4d8;border-bottom:.5pt solid #d4d4d8;padding:10pt 0;
+  margin:12pt 0;page-break-inside:avoid}
+.stat{text-align:center}
+.stat .value{font-size:28pt;font-weight:700}
+.stat .label{font-size:9pt;color:#6b7280;text-transform:uppercase;margin-top:2pt}
+.callout{border:.5pt solid #d4d4d8;border-left:3pt solid #1e40af;padding:10pt 12pt;
+  margin:10pt 0;page-break-inside:avoid}
+.callout-title{font-weight:700;font-size:10pt;margin-bottom:4pt;color:#1a1a1a}
+.pill{display:inline-block;border:1pt solid #6b7280;color:#6b7280;font-size:8pt;
+  font-weight:700;text-transform:uppercase;padding:1pt 5pt;border-radius:2pt}
+.pill.sev-crit{border-color:#b91c1c;color:#b91c1c}
+.pill.sev-high{border-color:#ea580c;color:#ea580c}
+.pill.sev-med{border-color:#b45309;color:#b45309}
+.pill.sev-low{border-color:#15803d;color:#15803d}
+ol.references{font-size:8.5pt;padding-left:16pt}
+ol.references li{margin:3pt 0}
+ul,ol{margin:6pt 0;padding-left:18pt}
+li{margin:2pt 0}
+blockquote{border-left:2pt solid #d4d4d8;margin:8pt 0;padding:1pt 10pt;color:#6b7280}
+</style>
+</head>
+<body>
+<header class="title-block"><div class="tb-left"><h1>Monthly Threat Landscape — Australia</h1><p class="subtitle">Operational CTI report for SOC and IR teams — May 2026 reporting window</p></div><div class="tb-right"><span class="tlp-pill">TLP:AMBER</span><div class="audience">AUDIENCE: SOC analysts and IR teams</div></div></header><hr class="title-rule">
+<h2 id="1-bottom-line-up-front">1. Bottom Line Up Front</h2>
+<ul><li>Ransomware activity against Australian healthcare rose 11% month-on-month, driven by <strong>Qilin</strong> affiliates <sup class="cite">[<a href="#ref-1">1</a>,<a href="#ref-3">3</a>]</sup>.</li><li>CVE-2026-21412 <span class="pill sev-crit">CRITICAL</span> in FortiGate SSL-VPN is under active exploitation; ACSC issued an alert on 28 May <sup class="cite">[<a href="#ref-2">2</a>]</sup>.</li><li><strong>What to do:</strong> prioritise the patching order in section 3 and load the consolidated IOCs in section 5.</li></ul>
+<div class="stats"><div class="stat"><div class="value">1,200</div><div class="label">INCIDENTS REPORTED <sup class="cite">[<a href="#ref-3">3</a>]</sup></div></div><div class="stat"><div class="value">11%</div><div class="label">MOM INCREASE <sup class="cite">[<a href="#ref-3">3</a>]</sup></div></div><div class="stat"><div class="value">4</div><div class="label">ACTIVELY EXPLOITED CVES <sup class="cite">[<a href="#ref-2">2</a>]</sup></div></div></div>
+<h2 id="2-australian-incidents">2. Australian Incidents</h2>
+<p>The OAIC confirmed a notifiable breach affecting 45,000 customers of a Victorian health insurer on 22 May <sup class="cite">[<a href="#ref-4">4</a>]</sup>. <em>Initial access</em> was via a phished O365 credential with no MFA <sup class="cite">[<a href="#ref-4">4</a>]</sup>.</p>
+<div class="callout"><div class="callout-title">Decisions required this month</div><ul><li>Approve emergency patching window for FortiGate fleet <sup class="cite">[<a href="#ref-2">2</a>]</sup></li><li>Fund MFA rollout completion for the remaining 12% of accounts <sup class="cite">[<a href="#ref-4">4</a>]</sup></li></ul></div>
+<h3 id="2-1-timeline">2.1 Timeline</h3>
+<table><thead><tr><th>Date</th><th>Event</th><th>Severity</th></tr></thead><tbody><tr><td>2026-05-08</td><td>Initial phish delivered</td><td><span class="pill sev-med">MEDIUM</span></td></tr><tr><td>2026-05-12</td><td>Credential replay from 203.0.113.7</td><td><span class="pill sev-high">HIGH</span></td></tr><tr><td>2026-05-22</td><td>Data exfiltration confirmed</td><td><span class="pill sev-crit">CRITICAL</span></td></tr></tbody></table>
+<h2 id="3-detection-guidance">3. Detection Guidance</h2>
+<p>Hunt for the replay pattern with this KQL:</p>
+<pre><code class="lang-kql">SigninLogs
+| where IPAddress == &quot;203.0.113.7&quot;
+| where ResultType == 0</code></pre>
+<p>Inline lookup example: <code>grep -r "203.0.113.7" /var/log/</code> finds local hits.</p>
+<blockquote><p>Analyst note: confidence is moderate; attribution to Qilin is based on shared infrastructure only <sup class="cite">[<a href="#ref-1">1</a>]</sup>.</p></blockquote>
+<h2 id="4-references">4. References</h2>
+<ol class="references"><li id="ref-1">CrowdStrike — Qilin affiliate infrastructure report — 2026-05-30 — <a href="https://www.crowdstrike.com/blog/qilin-affiliates" target="_blank" rel="noopener">www.crowdstrike.com/blog/qilin-affiliates</a></li><li id="ref-2">ACSC — Alert AA26-148A FortiGate exploitation — 2026-05-28 — <a href="https://www.cyber.gov.au/alerts/aa26-148a" target="_blank" rel="noopener">www.cyber.gov.au/alerts/aa26-148a</a></li><li id="ref-3">ACSC — Monthly cyber threat statistics — 2026-06-02 — <a href="https://www.cyber.gov.au/stats/may-2026" target="_blank" rel="noopener">www.cyber.gov.au/stats/may-2026</a></li><li id="ref-4">OAIC — Notifiable data breach statement — 2026-05-25 — <a href="https://www.oaic.gov.au/ndb/statements/2026-05" target="_blank" rel="noopener">www.oaic.gov.au/ndb/statements/2026-05</a></li></ol>
+</body>
+</html>

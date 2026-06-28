@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Monthly Threat Landscape — Australia</title>
+<style>
+:root{
+  --bg:#0d1014;--surface:#14181f;--raised:#1a1f28;--text:#e8eaed;--text-2:#9aa0a6;
+  --text-3:#5f6368;--border:#232831;--rule:#2a3038;--accent:#93c5fd;--link:#93c5fd;
+  --cite:#fca5a5;--sev-crit:#f87171;--sev-high:#fb923c;--sev-med:#fbbf24;--sev-low:#34d399;
+}
+*{box-sizing:border-box}
+body{font-family:'Inter',-apple-system,'Segoe UI',system-ui,sans-serif;font-size:14px;
+  line-height:1.6;color:var(--text);background:var(--bg);-webkit-font-smoothing:antialiased;
+  max-width:880px;margin:0 auto;padding:32px 40px}
+h1{font-size:22px;font-weight:700;letter-spacing:-0.01em;line-height:1.25;margin:8px 0 6px}
+h2{font-size:17px;font-weight:700;letter-spacing:-0.005em;margin-top:32px;padding-top:18px;
+  border-top:1px solid var(--rule)}
+h3{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.10em;
+  color:var(--text-2);margin-top:20px}
+h4{font-size:13px;font-weight:600;margin-top:16px}
+p{margin:10px 0}
+a{color:var(--link);text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:2px}
+hr{border:0;border-top:1px solid var(--rule);margin:32px 0}
+.subtitle{color:var(--text-2);margin:0 0 4px}
+.meta-strip{display:flex;flex-wrap:wrap;gap:14px;align-items:center;font-size:11px;
+  color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:18px}
+.pill{display:inline-block;border:1px solid var(--border);color:var(--text-2);font-size:10px;
+  font-weight:600;text-transform:uppercase;letter-spacing:.06em;padding:2px 8px;
+  border-radius:3px;background:transparent}
+.pill.sev-crit{border-color:var(--sev-crit);color:var(--sev-crit)}
+.pill.sev-high{border-color:var(--sev-high);color:var(--sev-high)}
+.pill.sev-med{border-color:var(--sev-med);color:var(--sev-med)}
+.pill.sev-low{border-color:var(--sev-low);color:var(--sev-low)}
+.pill.tlp{border-color:#fb923c;color:#fb923c}
+table{border-collapse:collapse;width:100%;margin:14px 0}
+th{font-size:10px;text-transform:uppercase;font-weight:600;color:var(--text-2);text-align:left;
+  border-bottom:1px solid var(--rule);padding:10px 12px}
+td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+tbody tr:hover{background:var(--surface)}
+pre{background:var(--surface);border:1px solid var(--border);border-radius:4px;
+  padding:12px 14px;font-size:12.5px;overflow-x:auto}
+code,pre,sup.cite{font-family:'JetBrains Mono','SF Mono',Menlo,Consolas,monospace}
+code{font-size:12.5px}
+p code,li code,td code{background:var(--surface);border:1px solid var(--border);
+  border-radius:3px;padding:1px 5px}
+sup.cite a{color:var(--cite);text-decoration:none;font-weight:700}
+.stats{display:flex;flex-wrap:wrap;margin:22px 0}
+.stat{padding:0 32px;border-left:1px solid var(--border)}
+.stat:first-child{border-left:0;padding-left:0}
+.stat .value{font-size:32px;font-weight:700;color:var(--text);line-height:1.2}
+.stat .label{font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--text-3);margin-top:4px}
+.callout{border:1px solid var(--border);border-radius:6px;padding:18px 20px;
+  background:var(--surface);margin:22px 0}
+.callout-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.10em;
+  color:var(--accent);margin-bottom:8px}
+ol.references{font-size:12.5px;color:var(--text-2);padding-left:22px}
+ol.references li{margin:6px 0}
+blockquote{border-left:2px solid var(--rule);margin:14px 0;padding:2px 16px;color:var(--text-2)}
+ul,ol{margin:10px 0;padding-left:24px}
+li{margin:4px 0}
+#presentBtn{position:fixed;top:14px;right:14px;z-index:1000;
+  background:var(--surface);border:1px solid var(--border);
+  color:var(--text-2);font-family:inherit;font-size:10px;font-weight:700;
+  letter-spacing:.1em;padding:7px 12px;border-radius:5px;cursor:pointer;
+  transition:color .2s,border-color .2s,background .2s}
+#presentBtn:hover{color:var(--accent);border-color:var(--accent);background:var(--raised)}
+body.present-mode{font-size:18px;line-height:1.7;padding:50px 80px;max-width:1100px}
+body.present-mode h1{font-size:34px;line-height:1.2;margin-bottom:24px}
+body.present-mode h2{font-size:24px;margin-top:48px;padding-top:24px}
+body.present-mode h3{font-size:13px;margin-top:24px}
+body.present-mode #presentBtn,
+body.present-mode .meta-strip{display:none}
+body.present-mode .stat .value{font-size:42px}
+body.present-mode pre,body.present-mode code{font-size:14px}
+body.present-mode table{font-size:15px}
+body.present-mode .references{font-size:13px;opacity:.85}
+</style>
+</head>
+<body>
+<button id="presentBtn" onclick="togglePresent()" title="Present (fullscreen, larger type) — press Esc to exit">▶ PRESENT</button>
+<header><div class="meta-strip"><span class="pill">OPERATIONAL</span><span class="pill tlp">TLP:AMBER</span><span>SOC analysts and IR teams</span><span>12 June 2026</span></div><h1>Monthly Threat Landscape — Australia</h1><p class="subtitle">Operational CTI report for SOC and IR teams — May 2026 reporting window</p></header>
+<main>
+<h2 id="1-bottom-line-up-front">1. Bottom Line Up Front</h2>
+<ul><li>Ransomware activity against Australian healthcare rose 11% month-on-month, driven by <strong>Qilin</strong> affiliates <sup class="cite">[<a href="#ref-1">1</a>,<a href="#ref-3">3</a>]</sup>.</li><li>CVE-2026-21412 <span class="pill sev-crit">CRITICAL</span> in FortiGate SSL-VPN is under active exploitation; ACSC issued an alert on 28 May <sup class="cite">[<a href="#ref-2">2</a>]</sup>.</li><li><strong>What to do:</strong> prioritise the patching order in section 3 and load the consolidated IOCs in section 5.</li></ul>
+<div class="stats"><div class="stat"><div class="value">1,200</div><div class="label">INCIDENTS REPORTED <sup class="cite">[<a href="#ref-3">3</a>]</sup></div></div><div class="stat"><div class="value">11%</div><div class="label">MOM INCREASE <sup class="cite">[<a href="#ref-3">3</a>]</sup></div></div><div class="stat"><div class="value">4</div><div class="label">ACTIVELY EXPLOITED CVES <sup class="cite">[<a href="#ref-2">2</a>]</sup></div></div></div>
+<h2 id="2-australian-incidents">2. Australian Incidents</h2>
+<p>The OAIC confirmed a notifiable breach affecting 45,000 customers of a Victorian health insurer on 22 May <sup class="cite">[<a href="#ref-4">4</a>]</sup>. <em>Initial access</em> was via a phished O365 credential with no MFA <sup class="cite">[<a href="#ref-4">4</a>]</sup>.</p>
+<div class="callout"><div class="callout-title">Decisions required this month</div><ul><li>Approve emergency patching window for FortiGate fleet <sup class="cite">[<a href="#ref-2">2</a>]</sup></li><li>Fund MFA rollout completion for the remaining 12% of accounts <sup class="cite">[<a href="#ref-4">4</a>]</sup></li></ul></div>
+<h3 id="2-1-timeline">2.1 Timeline</h3>
+<table><thead><tr><th>Date</th><th>Event</th><th>Severity</th></tr></thead><tbody><tr><td>2026-05-08</td><td>Initial phish delivered</td><td><span class="pill sev-med">MEDIUM</span></td></tr><tr><td>2026-05-12</td><td>Credential replay from 203.0.113.7</td><td><span class="pill sev-high">HIGH</span></td></tr><tr><td>2026-05-22</td><td>Data exfiltration confirmed</td><td><span class="pill sev-crit">CRITICAL</span></td></tr></tbody></table>
+<h2 id="3-detection-guidance">3. Detection Guidance</h2>
+<p>Hunt for the replay pattern with this KQL:</p>
+<pre><code class="lang-kql">SigninLogs
+| where IPAddress == &quot;203.0.113.7&quot;
+| where ResultType == 0</code></pre>
+<p>Inline lookup example: <code>grep -r "203.0.113.7" /var/log/</code> finds local hits.</p>
+<blockquote><p>Analyst note: confidence is moderate; attribution to Qilin is based on shared infrastructure only <sup class="cite">[<a href="#ref-1">1</a>]</sup>.</p></blockquote>
+<h2 id="4-references">4. References</h2>
+<ol class="references"><li id="ref-1">CrowdStrike — Qilin affiliate infrastructure report — 2026-05-30 — <a href="https://www.crowdstrike.com/blog/qilin-affiliates" target="_blank" rel="noopener">www.crowdstrike.com/blog/qilin-affiliates</a></li><li id="ref-2">ACSC — Alert AA26-148A FortiGate exploitation — 2026-05-28 — <a href="https://www.cyber.gov.au/alerts/aa26-148a" target="_blank" rel="noopener">www.cyber.gov.au/alerts/aa26-148a</a></li><li id="ref-3">ACSC — Monthly cyber threat statistics — 2026-06-02 — <a href="https://www.cyber.gov.au/stats/may-2026" target="_blank" rel="noopener">www.cyber.gov.au/stats/may-2026</a></li><li id="ref-4">OAIC — Notifiable data breach statement — 2026-05-25 — <a href="https://www.oaic.gov.au/ndb/statements/2026-05" target="_blank" rel="noopener">www.oaic.gov.au/ndb/statements/2026-05</a></li></ol>
+</main>
+<script>
+function togglePresent(){
+  const on = document.body.classList.toggle('present-mode');
+  if (on && document.documentElement.requestFullscreen) {
+    document.documentElement.requestFullscreen().catch(()=>{});
+  } else if (!on && document.fullscreenElement) {
+    document.exitFullscreen();
+  }
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && document.body.classList.contains('present-mode')) {
+    document.body.classList.remove('present-mode');
+    if (document.fullscreenElement) document.exitFullscreen();
+  }
+});
+document.addEventListener('fullscreenchange', () => {
+  if (!document.fullscreenElement) document.body.classList.remove('present-mode');
+});
+</script>
+</body>
+</html>
