@@ -246,19 +246,12 @@ Skills are prompt templates that drive report generation. Each skill lives in it
 | **Admiralty Assessment** | Quality-assesses a CTI report using the NATO Admiralty Code (6×6 source/information grading) |
 | **STIX Bundle Export** | Parses a threat intel source, extracts IOCs, and emits a valid STIX 2.1 bundle for MISP/OpenCTI/Sentinel TI |
 
-### DFIR
-
-| Skill | Description |
-|---|---|
-| **Phishing DFIR** | Full forensic analysis of a phishing email — headers, infrastructure, URL chains, attachment lookups, campaign attribution |
-| **Incident Timeline** | Consolidates raw events into a chronological UTC + local time incident timeline with phase classification |
-| **IR Playbook Generator** | NIST 800-61r3 operator playbooks for 13 attack types — phase-by-phase checklists, decision trees, escalation paths, comms templates |
-| **Log Analysis (Sherlog Holmes)** | Interactive SIEM-style log dashboard for triage — file upload, severity filters, IP correlation, AI summarisation |
-
 ### Strategy
 
 | Skill | Description |
 |---|---|
+| **Post-Incident Review** | Structured lessons-learned review from an incident report — timeline reconstruction, root cause analysis, detection gap analysis, DRAFT Sigma/KQL stubs, prioritised action register |
+| **IR Playbook Generator** | NIST 800-61r3 operator playbooks for 13 attack types — phase-by-phase checklists, decision trees, escalation paths, comms templates |
 | **Threat Model** | PASTA or STRIDE threat model — inline SVG DFD, ATT&CK/CWE/CAPEC mappings, threat register with heatmap, NIST CSF 2.0 mitigations |
 | **Tabletop Exercise (TTX)** | Facilitator-ready IR tabletop — 6 phased injects, facilitator notes, discussion questions, AU regulatory triggers |
 | **BAS / Red Team Plan** | Breach and attack simulation campaign plan — 6–8 attack playbooks, atomic test cases, control-layer effectiveness matrix, MITRE coverage heatmap |
