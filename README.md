@@ -17,7 +17,6 @@ An AI-powered Cyber Threat Intelligence platform. Generate professional analyst 
 | **Background Jobs** | Reports generate server-side — close your laptop, let your screen sleep, the job keeps running and appears in the Jobs panel when done |
 | **Scheduled Reports** | Schedule recurring report generation on cron-style intervals — daily briefs, weekly summaries, monthly reports |
 | **IOC Search** | Enrich IPs, domains, hashes, and URLs across VirusTotal, AbuseIPDB, OTX, urlscan.io, Shodan, ThreatFox, MISP, and Hybrid Analysis in one query — with AI-generated triage summary |
-| **Bulk IOC Enrich** | Upload or paste a list of IOCs for batch enrichment with consolidated verdict table |
 | **Malware Intel** | Deep hash analysis via VirusTotal, MalwareBazaar, and Hybrid Analysis — detections, C2 relationships, YARA hits, sandbox verdicts |
 | **CVE Search** | Search and analyse CVEs with AI-generated impact briefs |
 | **Domain Enumeration** | DNS, WHOIS, subdomains, and open-port recon against a target domain |
