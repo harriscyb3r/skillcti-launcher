@@ -3,9 +3,29 @@ import { MD_REPORT_FORMAT, MD_CITATION_REQUIREMENT, MD_REFERENCES_REMINDER, MD_H
 
 const MODEL = 'claude-sonnet-4-6'
 
-// ── MISP context injection ──────────────────────────────────────────────────
-// Maps skill IDs to the MISP query type and look-back window.
+// ── MISP / OTX context injection ────────────────────────────────────────────
+// Maps skill IDs to the query type and look-back window for both MISP and OTX.
 const MISP_SKILL_CONFIG: Record<string, { type: string; days: number }> = {
+  'daily-brief-global':   { type: 'daily',        days: 7   },
+  'operational':          { type: 'operational',  days: 30  },
+  'operational-au':       { type: 'operational',  days: 30  },
+  'operational-global':   { type: 'operational',  days: 30  },
+  'tactical':             { type: 'tactical',     days: 30  },
+  'tactical-au':          { type: 'tactical',     days: 30  },
+  'tactical-global':      { type: 'tactical',     days: 30  },
+  'strategic':            { type: 'strategic',    days: 90  },
+  'strategic-au':         { type: 'strategic',    days: 90  },
+  'strategic-global':     { type: 'strategic',    days: 90  },
+  'sector':               { type: 'sector',       days: 90  },
+  'sector-au':            { type: 'sector',       days: 90  },
+  'sector-global':        { type: 'sector',       days: 90  },
+  'threat-actor-profile': { type: 'threat-actor', days: 365 },
+  'tabletop':             { type: 'threat-actor', days: 365 },
+  'bas-red-team':         { type: 'threat-actor', days: 365 },
+  'security-advisory':    { type: 'advisory',     days: 90  },
+}
+
+const OTX_SKILL_CONFIG: Record<string, { type: string; days: number }> = {
   'daily-brief-global':   { type: 'daily',        days: 7   },
   'operational':          { type: 'operational',  days: 30  },
   'operational-au':       { type: 'operational',  days: 30  },
@@ -72,6 +92,20 @@ async function fetchMispContext(skillId: string, userMessage: string): Promise<s
   if (query) params.set('query', query)
 
   const res = await fetch(`/misp/context?${params}`)
+  if (!res.ok) return null
+  const data: { has_data: boolean; context: string | null } = await res.json()
+  return data.has_data ? data.context : null
+}
+
+async function fetchOtxContext(skillId: string, userMessage: string): Promise<string | null> {
+  const config = OTX_SKILL_CONFIG[skillId]
+  if (!config) return null
+
+  const query = extractMispQuery(skillId, userMessage)
+  const params = new URLSearchParams({ skill_type: config.type, days: String(config.days) })
+  if (query) params.set('query', query)
+
+  const res = await fetch(`/otx/context?${params}`)
   if (!res.ok) return null
   const data: { has_data: boolean; context: string | null } = await res.json()
   return data.has_data ? data.context : null
@@ -280,12 +314,16 @@ export async function submitBackgroundJob({ skill, format, userMessage, model }:
   const resolvedModel = model ?? skill.defaultModel ?? MODEL
   const system = buildSystemPrompt(skillMd, format, resolvedModel)
 
-  // Silently enrich with MISP context when available — never block the job on failure
+  // Silently enrich with MISP and OTX context in parallel — never block the job on failure
   let enrichedMessage = userMessage
   try {
-    const mispCtx = await fetchMispContext(skill.id, userMessage)
-    if (mispCtx) enrichedMessage = `${userMessage}\n\n${mispCtx}`
-  } catch { /* MISP is optional */ }
+    const [mispCtx, otxCtx] = await Promise.all([
+      fetchMispContext(skill.id, userMessage),
+      fetchOtxContext(skill.id, userMessage),
+    ])
+    if (mispCtx) enrichedMessage = `${enrichedMessage}\n\n${mispCtx}`
+    if (otxCtx) enrichedMessage = `${enrichedMessage}\n\n${otxCtx}`
+  } catch { /* MISP/OTX are optional */ }
 
   const body: Record<string, unknown> = {
     model: resolvedModel,
@@ -323,12 +361,16 @@ export async function generate({ skill, format, userMessage, model, onProgress, 
   const resolvedModel = model ?? skill.defaultModel ?? MODEL
   const system = buildSystemPrompt(skillMd, format, resolvedModel)
 
-  // Silently enrich with MISP context when available
+  // Silently enrich with MISP and OTX context in parallel
   let enrichedMessage = userMessage
   try {
-    const mispCtx = await fetchMispContext(skill.id, userMessage)
-    if (mispCtx) enrichedMessage = `${userMessage}\n\n${mispCtx}`
-  } catch { /* MISP is optional */ }
+    const [mispCtx, otxCtx] = await Promise.all([
+      fetchMispContext(skill.id, userMessage),
+      fetchOtxContext(skill.id, userMessage),
+    ])
+    if (mispCtx) enrichedMessage = `${enrichedMessage}\n\n${mispCtx}`
+    if (otxCtx) enrichedMessage = `${enrichedMessage}\n\n${otxCtx}`
+  } catch { /* MISP/OTX are optional */ }
 
   onProgress?.(`Generating report…`)
 

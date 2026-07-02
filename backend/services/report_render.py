@@ -494,6 +494,17 @@ def render_report_html(
     md = unwrap_outer_fence(md_text)
     fm, body = parse_front_matter(md)
 
+    # When the Write tool is unavailable (web-app job path), the model may
+    # emit narration/thinking prose before the YAML front-matter block.
+    # parse_front_matter requires --- at the very start, so it returns {} and
+    # the narration leaks into the rendered output.  Search for the first
+    # ^---\ntitle: block and discard everything before it.
+    if not fm:
+        narration_skip = re.search(r'(?m)^---[ \t]*\ntitle:', md)
+        if narration_skip and narration_skip.start() > 0:
+            md = md[narration_skip.start():]
+            fm, body = parse_front_matter(md)
+
     title = fm.get("title") or fallback_title
     subtitle = fm.get("subtitle", "")
     tlp = fm.get("tlp", "TLP:CLEAR")

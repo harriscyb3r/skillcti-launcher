@@ -983,6 +983,135 @@ export interface UpdateCaseRequest {
   tags?: string[]
 }
 
+// ── Threat Hunting ────────────────────────────────────────────────────────────
+
+export type HuntStatus = 'planning' | 'in-progress' | 'complete' | 'escalated'
+export type HuntPriority = 'critical' | 'high' | 'medium' | 'low'
+export type HuntVerdict = 'not-found' | 'unconfirmed' | 'suspicious' | 'confirmed'
+export type FindingStatus = 'benign' | 'suspicious' | 'malicious'
+export type QueryPhase = 'baseline' | 'anomaly-detection' | 'triage' | 'confirmation' | 'evidence-collection'
+export type QueryType = 'broad' | 'focused' | 'pivot'
+
+export interface MitreTechnique {
+  id: string
+  name: string
+  tactic: string
+}
+
+export interface HuntNote {
+  id: string
+  hunt_id: string
+  content: string
+  created_at: string
+}
+
+export interface HuntQuery {
+  id: string
+  hunt_id: string
+  title: string
+  phase: QueryPhase
+  query_type: QueryType
+  technique_id: string
+  query_text: string
+  platform: string
+  false_positives: string
+  notes: string
+  created_at: string
+}
+
+export interface HuntFinding {
+  id: string
+  hunt_id: string
+  timestamp_utc: string
+  host: string
+  user_field: string
+  indicator: string
+  tactic: string
+  notes: string
+  status: FindingStatus
+  created_at: string
+}
+
+export interface Hunt {
+  id: string
+  title: string
+  hypothesis: string
+  description: string
+  status: HuntStatus
+  priority: HuntPriority
+  tlp: string
+  platform: string
+  timeframe: string
+  intel_source: string
+  mitre_techniques: MitreTechnique[]
+  verdict: HuntVerdict | null
+  tags: string[]
+  created_at: string
+  updated_at: string
+  note_count: number
+  query_count: number
+  finding_count: number
+  notes?: HuntNote[]
+  queries?: HuntQuery[]
+  findings?: HuntFinding[]
+}
+
+export interface CreateHuntRequest {
+  title: string
+  hypothesis?: string
+  description?: string
+  status?: HuntStatus
+  priority?: HuntPriority
+  tlp?: string
+  platform?: string
+  timeframe?: string
+  intel_source?: string
+  mitre_techniques?: MitreTechnique[]
+  tags?: string[]
+}
+
+export interface UpdateHuntRequest {
+  title?: string
+  hypothesis?: string
+  description?: string
+  status?: HuntStatus
+  priority?: HuntPriority
+  tlp?: string
+  platform?: string
+  timeframe?: string
+  intel_source?: string
+  mitre_techniques?: MitreTechnique[]
+  verdict?: HuntVerdict | null
+  tags?: string[]
+}
+
+export interface GeneratedHuntHypothesis {
+  title: string
+  rationale: string
+  mitre_id: string
+  mitre_name: string
+  tactic: string
+  priority: 'high' | 'medium' | 'low'
+  confidence: 'high' | 'medium' | 'low'
+}
+
+export interface GeneratedHuntQuery {
+  title: string
+  phase: QueryPhase
+  query_type: QueryType
+  technique_id: string
+  query_text: string
+  false_positives: string
+  notes: string
+}
+
+export interface GeneratedHuntPlan {
+  hypotheses: GeneratedHuntHypothesis[]
+  mitre_techniques: MitreTechnique[]
+  methodology: string
+  queries: GeneratedHuntQuery[]
+}
+
 // ── Client / Engagement Manager ──────────────────────────────────────────────
 
 export type ClientStatus = 'active' | 'prospecting' | 'on_hold' | 'completed'

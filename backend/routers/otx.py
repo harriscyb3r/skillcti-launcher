@@ -1,12 +1,13 @@
 """
 AlienVault OTX integration.
-Endpoints: /otx/status, /otx/feed, /otx/pulse/{id}, /otx/search
+Endpoints: /otx/status, /otx/feed, /otx/pulse/{id}, /otx/search, /otx/context
 Auth: X-OTX-API-KEY header. No extra library — raw httpx.
 """
 
 import asyncio
 import re
 import time
+from datetime import datetime, timedelta, timezone
 from urllib.parse import quote
 
 import httpx
@@ -175,6 +176,115 @@ async def otx_pulse(pulse_id: str):
             }
     except Exception as e:
         return {"status": "error", "detail": str(e)[:200]}
+
+
+def _format_otx_context(pulses: list, skill_type: str, query: str = "") -> str:
+    """Format OTX pulses into structured intelligence text for LLM prompt injection."""
+    header_parts = [f"Pulses included: {len(pulses)}"]
+    if query:
+        header_parts.append(f"Search query: {query}")
+
+    lines: list[str] = [
+        "══════════════════════════════════════════════════════════",
+        "ALIENVAULT OTX THREAT INTELLIGENCE",
+        "Source: AlienVault Open Threat Exchange (community + subscribed pulses)",
+        "  ".join(header_parts),
+        "══════════════════════════════════════════════════════════",
+        "",
+        "Incorporate the following OTX pulse intelligence into your analysis where relevant.",
+        "Weight open-community pulses appropriately — corroborate with other sources before treating as confirmed.",
+        "",
+    ]
+
+    for p in pulses:
+        name = p.get("name", "(untitled)")
+        author = p.get("author_name", "")
+        created = (p.get("created") or p.get("modified", ""))[:10]
+        tlp = (p.get("tlp") or "white").upper()
+        ioc_count = p.get("indicator_count", 0)
+        tags = p.get("tags", [])[:6]
+        targeted_countries = p.get("targeted_countries", [])[:5]
+        industries = p.get("industries", [])[:4]
+        attack_ids = [a.get("display_name", "") for a in p.get("attack_ids", [])[:4] if a.get("display_name")]
+        malware_families = [m.get("display_name", "") for m in p.get("malware_families", [])[:3] if m.get("display_name")]
+        description = (p.get("description") or "")[:300].strip()
+        references = p.get("references", [])[:2]
+
+        block = [f"### [TLP:{tlp}] {name}"]
+        block.append(f"Date: {created}  |  Author: {author}  |  IOCs: {ioc_count}")
+        if industries:
+            block.append(f"Industries: {', '.join(industries)}")
+        if targeted_countries:
+            block.append(f"Targeted countries: {', '.join(targeted_countries)}")
+        if attack_ids:
+            block.append(f"ATT&CK: {', '.join(attack_ids)}")
+        if malware_families:
+            block.append(f"Malware families: {', '.join(malware_families)}")
+        if tags:
+            block.append(f"Tags: {', '.join(tags)}")
+        if description:
+            block.append(f"Summary: {description}")
+        if references:
+            block.append(f"References: {'; '.join(references)}")
+
+        lines.extend(block)
+        lines.append("")
+
+    lines += [
+        "══════════════════════════════════════════════════════════",
+        "END OF OTX INTELLIGENCE CONTEXT",
+        "══════════════════════════════════════════════════════════",
+    ]
+    return "\n".join(lines)
+
+
+@router.get("/context")
+async def otx_context(
+    skill_type: str = "operational",
+    query: str = "",
+    days: int = 30,
+):
+    """Return OTX pulses formatted as structured intelligence text for prompt injection.
+
+    skill_type: operational | tactical | strategic | daily | sector | threat-actor | advisory
+    query:      free-text search term (required for threat-actor, advisory, sector)
+    days:       look-back window in calendar days
+    """
+    if not settings.otx_api_key:
+        return {"context": None, "pulse_count": 0, "has_data": False}
+
+    modified_since = (
+        datetime.now(timezone.utc) - timedelta(days=days)
+    ).strftime("%Y-%m-%dT%H:%M:%S+00:00")
+
+    try:
+        async with httpx.AsyncClient(timeout=20) as client:
+            if skill_type in ("sector", "threat-actor", "advisory") and query.strip():
+                r = await client.get(
+                    f"{OTX_BASE}/search/pulses",
+                    headers=_headers(),
+                    params={"q": query.strip(), "limit": 15, "page": 1},
+                )
+            else:
+                limit = 10 if skill_type == "daily" else 20
+                r = await client.get(
+                    f"{OTX_BASE}/pulses/subscribed",
+                    headers=_headers(),
+                    params={"limit": limit, "page": 1, "modified_since": modified_since},
+                )
+
+        if r.status_code in (401, 403):
+            return {"context": None, "pulse_count": 0, "has_data": False}
+        r.raise_for_status()
+        pulses = r.json().get("results", [])
+    except Exception as exc:
+        return {"context": None, "pulse_count": 0, "has_data": False, "error": str(exc)[:200]}
+
+    if not pulses:
+        return {"context": None, "pulse_count": 0, "has_data": False}
+
+    context = _format_otx_context(pulses, skill_type, query)
+    return {"context": context, "pulse_count": len(pulses), "has_data": True}
 
 
 @router.get("/search")

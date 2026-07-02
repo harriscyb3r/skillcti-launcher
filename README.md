@@ -59,11 +59,12 @@ skill-cti/                # Repo root
 │   ├── .env.example      # Environment variable template — copy to .env and fill in
 │   └── .env              # Your local secrets — gitignored, never committed
 ├── reports/              # Generated HTML / PDF / PPTX — gitignored, auto-created
+├── skills/               # One directory per skill, each containing a SKILL.md prompt template
 ├── skills.js             # Skill catalogue (prompt overrides, input schemas, metadata)
 └── skill-cti.html        # Standalone single-file launcher (no backend required)
 ```
 
-> **Skill prompt files:** The backend looks for skill prompt files in a `skills/` directory one level above this repo (`../skills/`). Clone or symlink your skill prompts there, or update `skills_root` in `backend/config.py` to point to wherever your `SKILL.md` files live.
+> **Skill prompt files:** The backend looks for skill prompt files in the `skills/` directory at the repo root. Update `skills_root` in `backend/config.py` if you want to point it elsewhere.
 
 The frontend dev server proxies `/api`, `/v1`, `/reports`, and `/skill` to the backend at `http://localhost:8765`, so there is no CORS complexity in development.
 
@@ -221,7 +222,7 @@ The sidebar shows a green MISP indicator when the connection is healthy.
 
 ## Skills
 
-Skills are prompt templates that drive report generation. Each skill lives in its own directory under the repo root (e.g. `cti-tabletop/SKILL.md`) and is registered in `app/src/lib/skills.ts`.
+Skills are prompt templates that drive report generation. Each skill lives in its own directory under `skills/` (e.g. `skills/cti-tabletop/SKILL.md`) and is registered in `app/src/lib/skills.ts`.
 
 ### CTI Reports
 

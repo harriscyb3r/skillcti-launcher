@@ -1058,7 +1058,7 @@ function AURansomwareWidget() {
   const victims = data?.slice(0, 5) ?? []
 
   return (
-    <div className="mb-6 animate-cardEnter">
+    <div className="mb-6">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <p className="text-[11px] font-bold tracking-[0.2em] text-txt-3 uppercase">
@@ -1099,7 +1099,7 @@ function AURansomwareWidget() {
         )}
 
         {victims.length > 0 && (
-          <div className="divide-y divide-border/50">
+          <div className="divide-y divide-border/50 animate-cardEnter">
             {victims.map((v, i) => (
               <button
                 key={i}

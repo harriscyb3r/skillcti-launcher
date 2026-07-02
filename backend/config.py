@@ -30,7 +30,7 @@ class Settings(BaseSettings):
 
     # Paths
     reports_dir: Path = _BACKEND_DIR.parent / "reports"
-    skills_root: Path = _BACKEND_DIR.parent.parent / "skills"
+    skills_root: Path = _BACKEND_DIR.parent / "skills"
 
     port: int = 8765
 

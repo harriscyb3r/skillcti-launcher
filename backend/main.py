@@ -10,7 +10,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from config import settings
-from routers import reports, skills, anthropic_proxy, export, feeds, settings_router, enrich, cve, threat_pulse, threat_actor_spotlight, watchlist, alerts_router, domain_enum, jobs, bulk_enrich, malware_intel, breach_monitor, library, news_feed, attack, scheduler, cases, ransomware_actors, otx, abuse_ch, pir, ioc_summary, render, identity_exposure, misp, clients, ransomware_live, file_extract
+from routers import reports, skills, anthropic_proxy, export, feeds, settings_router, enrich, cve, threat_pulse, threat_actor_spotlight, watchlist, alerts_router, domain_enum, jobs, bulk_enrich, malware_intel, breach_monitor, library, news_feed, attack, scheduler, cases, ransomware_actors, otx, abuse_ch, pir, ioc_summary, render, identity_exposure, misp, clients, ransomware_live, file_extract, hunts
 
 app = FastAPI(title="SkillCTI API", version="2.0.0")
 
@@ -71,6 +71,7 @@ app.include_router(misp.router)
 app.include_router(clients.router)
 app.include_router(ransomware_live.router)
 app.include_router(file_extract.router)
+app.include_router(hunts.router)
 
 
 @app.on_event("startup")

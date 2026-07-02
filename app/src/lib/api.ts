@@ -1,4 +1,4 @@
-import type { Report, ReportMeta, AppSettings, HealthStatus, RansomFeed, EnrichResult, CVEResult, ThreatPulseData, ThreatActorSpotlightData, WatchItem, WatchItemType, WatchAlert, AlertsResponse, DomainEnumResult, Job, BulkEnrichResult, MalwareIntelResult, BreachResult, LibraryItem, LibraryListResponse, CreateLibraryItem, UpdateLibraryItem, NewsFeed, NewsArticle, NewsFeedsResponse, NewsArticlesResponse, AttackStatus, AttackTactic, AttackTechnique, AttackTechniqueDetail, AttackGroup, AttackGroupDetail, RansomwareActorSummary, RansomwareActorDetail, Schedule, CreateSchedule, UpdateSchedule, Case, CaseNote, CaseArtifact, CreateCaseRequest, UpdateCaseRequest, ArtifactType, OtxStatusResponse, OtxFeedResponse, OtxSearchResponse, Pir, PirFinding, CreatePirRequest, UpdatePirRequest, IdentityExposureResult, MispStatus, MispEventsResponse, MispEventDetailResponse, MispSearchResponse, Client, CreateClientRequest, UpdateClientRequest } from './types'
+import type { Report, ReportMeta, AppSettings, HealthStatus, RansomFeed, EnrichResult, CVEResult, ThreatPulseData, ThreatActorSpotlightData, WatchItem, WatchItemType, WatchAlert, AlertsResponse, DomainEnumResult, Job, BulkEnrichResult, MalwareIntelResult, BreachResult, LibraryItem, LibraryListResponse, CreateLibraryItem, UpdateLibraryItem, NewsFeed, NewsArticle, NewsFeedsResponse, NewsArticlesResponse, AttackStatus, AttackTactic, AttackTechnique, AttackTechniqueDetail, AttackGroup, AttackGroupDetail, RansomwareActorSummary, RansomwareActorDetail, Schedule, CreateSchedule, UpdateSchedule, Case, CaseNote, CaseArtifact, CreateCaseRequest, UpdateCaseRequest, ArtifactType, OtxStatusResponse, OtxFeedResponse, OtxSearchResponse, Pir, PirFinding, CreatePirRequest, UpdatePirRequest, IdentityExposureResult, MispStatus, MispEventsResponse, MispEventDetailResponse, MispSearchResponse, Client, CreateClientRequest, UpdateClientRequest, Hunt, HuntNote, HuntQuery, HuntFinding, CreateHuntRequest, UpdateHuntRequest, QueryPhase, QueryType, FindingStatus, GeneratedHuntPlan } from './types'
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(path, options)
@@ -554,5 +554,102 @@ export const api = {
 
   deleteClient(id: string): Promise<{ ok: boolean }> {
     return request<{ ok: boolean }>(`/api/clients/${id}`, { method: 'DELETE' })
+  },
+
+  // Hunts
+  listHunts(status?: string): Promise<{ hunts: Hunt[] }> {
+    const qs = status ? `?status=${encodeURIComponent(status)}` : ''
+    return request<{ hunts: Hunt[] }>(`/api/hunts${qs}`)
+  },
+
+  createHunt(data: CreateHuntRequest): Promise<Hunt> {
+    return request<Hunt>('/api/hunts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    })
+  },
+
+  getHunt(id: string): Promise<Hunt> {
+    return request<Hunt>(`/api/hunts/${id}`)
+  },
+
+  updateHunt(id: string, updates: UpdateHuntRequest): Promise<Hunt> {
+    return request<Hunt>(`/api/hunts/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates),
+    })
+  },
+
+  deleteHunt(id: string): Promise<{ ok: boolean }> {
+    return request<{ ok: boolean }>(`/api/hunts/${id}`, { method: 'DELETE' })
+  },
+
+  addHuntNote(huntId: string, content: string): Promise<HuntNote> {
+    return request<HuntNote>(`/api/hunts/${huntId}/notes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content }),
+    })
+  },
+
+  deleteHuntNote(huntId: string, noteId: string): Promise<{ ok: boolean }> {
+    return request<{ ok: boolean }>(`/api/hunts/${huntId}/notes/${noteId}`, { method: 'DELETE' })
+  },
+
+  addHuntQuery(huntId: string, q: {
+    title: string; phase: QueryPhase; query_type: QueryType;
+    technique_id: string; query_text: string; platform: string;
+    false_positives: string; notes: string;
+  }): Promise<HuntQuery> {
+    return request<HuntQuery>(`/api/hunts/${huntId}/queries`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(q),
+    })
+  },
+
+  updateHuntQuery(huntId: string, queryId: string, updates: Partial<HuntQuery>): Promise<HuntQuery> {
+    return request<HuntQuery>(`/api/hunts/${huntId}/queries/${queryId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates),
+    })
+  },
+
+  deleteHuntQuery(huntId: string, queryId: string): Promise<{ ok: boolean }> {
+    return request<{ ok: boolean }>(`/api/hunts/${huntId}/queries/${queryId}`, { method: 'DELETE' })
+  },
+
+  addHuntFinding(huntId: string, f: {
+    timestamp_utc?: string; host?: string; user_field?: string;
+    indicator?: string; tactic?: string; notes?: string; status?: FindingStatus;
+  }): Promise<HuntFinding> {
+    return request<HuntFinding>(`/api/hunts/${huntId}/findings`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(f),
+    })
+  },
+
+  updateHuntFinding(huntId: string, findingId: string, updates: Partial<HuntFinding>): Promise<HuntFinding> {
+    return request<HuntFinding>(`/api/hunts/${huntId}/findings/${findingId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates),
+    })
+  },
+
+  deleteHuntFinding(huntId: string, findingId: string): Promise<{ ok: boolean }> {
+    return request<{ ok: boolean }>(`/api/hunts/${huntId}/findings/${findingId}`, { method: 'DELETE' })
+  },
+
+  generateHuntPlan(huntId: string, additionalContext?: string): Promise<GeneratedHuntPlan> {
+    return request<GeneratedHuntPlan>(`/api/hunts/${huntId}/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ additional_context: additionalContext ?? '' }),
+    })
   },
 }

@@ -24,6 +24,7 @@ const MISP                = lazy(() => import('./pages/MISP'))
 const Clients             = lazy(() => import('./pages/Clients'))
 const RansomwareTracker   = lazy(() => import('./pages/RansomwareTracker'))
 const PromptLibrary       = lazy(() => import('./pages/PromptLibrary'))
+const Hunts               = lazy(() => import('./pages/Hunts'))
 
 export default function App() {
   return (
@@ -55,6 +56,7 @@ export default function App() {
           <Route path="clients" element={<Clients />} />
           <Route path="ransomware" element={<RansomwareTracker />} />
           <Route path="prompt-library" element={<PromptLibrary />} />
+          <Route path="hunts" element={<Hunts />} />
         </Route>
       </Routes>
     </BrowserRouter>
